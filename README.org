@@ -1,0 +1,123 @@
+#+TITLE: Graftwerk :: Pipeline Runner API Docs
+
+*NOTE:* The Graftwerk pipeline runner is a stateless service.  You
+submit requests to it, and receive responses.  It does not persist any
+state across requests.
+
+* Response Codes
+
+The following response codes may be returned on requests:
+
+| Status Code | Name                   | Meaning                                                                                                    |
+|-------------+------------------------+------------------------------------------------------------------------------------------------------------|
+|         200 | Ok                     | The result will be in the response                                                                         |
+|         404 | Not Found              | Invalid service route                                                                                      |
+|         415 | Unsupported Media Type | The server did not understand the supplied data, e.g. a file format that we don't understand was supplied. |
+|         422 | Unprocessable Entity   | The data is understood, but still invalid.  The response object may contain more information.              |
+|         500 | Server Error           | An error occured.  An error object may be returned in the response.                                        |
+
+* Evaluating a Pipeline as a pipe
+
+| Route                     | Method |
+|---------------------------+--------|
+| =/pipe/evaluate(.format)= | =POST= |
+
+Sending a =POST= request to =/pipe/evaluate= will evaluate the
+pipeline returning the result based upon the accept header.
+
+** Required Parameters
+
+The POSTs body =MUST= contain valid =multipart/form-data= and =MUST=
+have the =Content-Type= of the request set to =multipart/form-data=.
+For more details see the [[http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.2][W3C recommendations on Form Content Types]].
+
+The form data =MUST= consist of the following parts:
+
+| Name (form key) | Description                      | Content-Disposition | Content Type                        |
+|-----------------+----------------------------------+---------------------+-------------------------------------|
+| pipeline        | The Grafter Pipeline Code        | file                | application/edn                     |
+| data            | The input file to be transformed | file                | text/csv application/vnd.ms-excel * |
+
+The =pipeline= MUST contain one and only one defpipe definition
+The =defpipe= MUST contain a single =->= form with any number of
+operation forms inside.
+
+#+BEGIN_SRC clojure
+(defpipe my-pipeline [dataset]
+  (-> (read-dataset dataset)
+      (operation ...)
+      (operation ...)
+      (operation ...)))
+#+END_SRC
+
+=*= NOTE it will also support xlsx with a mimetype of
+=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=
+
+** Response Formats
+
+The =/pipe= route is used to execute the =pipe= part of a
+transformation and consequently can only return tabular data formats,
+it should not be used to execute grafts.
+
+Clients =SHOULD= specify the format they want by setting the accept
+header of the request, or by supplying a format parameter on the URL.
+If no valid format is specified EDN will be returned.
+
+It =SHALL= support the following response formats:
+
+| Format Extension | Accept Header            |
+|------------------+--------------------------|
+| .edn             | application/edn          |
+| .csv             | text/csv                 |
+
+* Pagination Parameters
+
+If no pagination parameters are supplied then the pipeline will return
+the results of the whole pipeline execution in the specified format.
+
+If however the interface wishes to render a preview of the
+transformation on a page of data it can request just these results
+
+The route supports the following parameters:
+
+| Parameter   | Type    | Action                                                          |
+|-------------+---------+-----------------------------------------------------------------|
+| =page=      | Integer | Requests the page number =page=.  Assuming =page-size= results. |
+| =page-size= | Integer | Page must be specified                                          |
+
+#+BEGIN_SRC http :pretty
+POST http://localhost:5005/pipe/evaluate
+Accept: text/csv
+#+END_SRC
+
+* Response Objects
+
+Responses are in EDN as the format can correctly convey type
+information which would need additional work to represent in JSON.
+
+*** Error Objects
+
+Error objects are defined as EDN tagged literals and have the
+following properties:
+
+#+BEGIN_SRC clojure
+#grafter.edn/Error {
+ :type "java.lang.NullPointerException"
+ :message "An error message"
+ :stacktrace "..."
+}
+#+END_SRC
+
+HTTP Status codes are used indicate most high level errors, however
+more details on the error may be contained in an EDN Error object.
+
+Error objects may in the future also be returned inside Datasets at
+either the row level, or cell level.
+
+*** Tabular Data
+
+#+BEGIN_SRC clojure
+#grafter.edn/Dataset { :column-names ["one" :two "three"]
+                       :rows [{"one" 1 :two 2 "three" 3}
+                              {"one" 2 :two 4 "three" 6}] }
+#+END_SRC
