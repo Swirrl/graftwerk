@@ -1,17 +1,18 @@
 (ns graftwerk.handler
   (:require [compojure.core :refer [defroutes routes]]
-            [graftwerk.routes.home :refer [home-routes]]
             [graftwerk.middleware
              :refer [development-middleware production-middleware]]
-            [ring.middleware.defaults :refer [site-defaults]]
+            [graftwerk.routes.pages :refer [page-routes]]
+            [graftwerk.middleware :refer [common-api-middleware
+                                          development-middleware
+                                          production-middleware]]
             [compojure.route :as route]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.rotor :as rotor]
-            [selmer.parser :as parser]
             [environ.core :refer [env]]))
 
 (defroutes base-routes
-  (route/resources "/")
+  (route/resources "/" {:root "build"})
   (route/not-found "Not Found"))
 
 (defn init
@@ -44,7 +45,8 @@
 
 (def app
   (-> (routes
-        home-routes
-        base-routes)
+       page-routes
+       base-routes)
+      common-api-middleware
       development-middleware
       production-middleware))

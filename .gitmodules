@@ -1,0 +1,3 @@
+[submodule "girder"]
+	path = girder
+	url = git@github.com:Swirrl/girder.git

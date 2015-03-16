@@ -5,10 +5,9 @@
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [ring-server "0.3.1"]
-                 [selmer "0.8.0"]
                  [com.taoensso/timbre "3.3.1"]
                  [com.taoensso/tower "3.0.2"]
-                 [markdown-clj "0.9.64"]
+                 [enlive "1.1.5"]
                  [environ "1.0.0"]
                  [compojure "1.3.2"]
                  [ring/ring-defaults "0.1.3"]
@@ -20,15 +19,19 @@
 
   :min-lein-version "2.5.0"
   :uberjar-name "graftwerk.jar"
-  :repl-options {:init-ns graftwerk.handler}
+
+  :repl-options {:init-ns graftwerk.core
+                 :init (-main)}
+
   :jvm-opts ["-server"]
 
   :main graftwerk.core
 
+  :resource-paths ["girder"]
+
   :plugins [[lein-ring "0.9.1"]
             [lein-environ "1.0.0"]
-            [lein-ancient "0.6.0"]
-            ]
+            [lein-ancient "0.6.0"]]
 
 
   :ring {:handler graftwerk.handler/app
@@ -47,11 +50,7 @@
                        :auto-reload?  false}}
    :dev {:dependencies [[ring-mock "0.1.5"]
                         [ring/ring-devel "1.3.2"]
-                        [pjstadig/humane-test-output "0.6.0"]
-                        ]
-
-
-
+                        [pjstadig/humane-test-output "0.6.0"]]
 
          :injections [(require 'pjstadig.humane-test-output)
                       (pjstadig.humane-test-output/activate!)]

@@ -4,17 +4,23 @@
             [selmer.middleware :refer [wrap-error-page]]
             [prone.middleware :refer [wrap-exceptions]]
             [ring.util.response :refer [redirect]]
-            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
+            [ring.middleware.defaults :refer [api-defaults wrap-defaults]]
             [ring.middleware.session-timeout :refer [wrap-idle-session-timeout]]
             [noir-exception.core :refer [wrap-internal-error]]
-            [ring.middleware.format :refer [wrap-restful-format]]
+            [ring.middleware.format :refer [wrap-restful-format]]))
 
-            ))
+(def middleware-params (assoc-in api-defaults [:params :multipart] true))
 
 (defn log-request [handler]
   (fn [req]
     (timbre/debug req)
     (handler req)))
+
+(defn common-api-middleware [handler]
+  (-> handler
+      (wrap-defaults middleware-params)
+      ;;wrap-restful-format
+      ))
 
 (defn development-middleware [handler]
   (if (env :dev)
@@ -25,8 +31,6 @@
 
 (defn production-middleware [handler]
   (-> handler
-
-      wrap-restful-format
       (wrap-idle-session-timeout
         {:timeout (* 60 30)
          :timeout-response (redirect "/")})
