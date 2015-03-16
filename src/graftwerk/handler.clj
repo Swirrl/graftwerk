@@ -1,7 +1,6 @@
 (ns graftwerk.handler
   (:require [compojure.core :refer [defroutes routes]]
-            [graftwerk.middleware
-             :refer [development-middleware production-middleware]]
+            [graftwerk.routes.evaluate :refer [pipe-route graft-route]]
             [graftwerk.routes.pages :refer [page-routes]]
             [graftwerk.middleware :refer [common-api-middleware
                                           development-middleware
@@ -9,7 +8,7 @@
             [compojure.route :as route]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.rotor :as rotor]
-            [environ.core :refer [env]]))
+            [environ.core :refer [env]] :reload-all))
 
 (defroutes base-routes
   (route/resources "/" {:root "build"})
@@ -28,11 +27,8 @@
      :fn rotor/appender-fn})
 
   (timbre/set-config!
-    [:shared-appender-config :rotor]
-    {:path "graftwerk.log" :max-size (* 512 1024) :backlog 10})
-
-  (if (env :dev) (parser/cache-off!))
-  ;;start the expired session cleanup job
+   [:shared-appender-config :rotor]
+   {:path "graftwerk.log" :max-size (* 512 1024) :backlog 10})
 
   (timbre/info "\n-=[ graftwerk started successfully"
                (when (env :dev) "using the development profile") "]=-"))
@@ -45,6 +41,8 @@
 
 (def app
   (-> (routes
+       pipe-route
+       graft-route
        page-routes
        base-routes)
       common-api-middleware

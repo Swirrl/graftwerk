@@ -65,10 +65,11 @@ If no valid format is specified EDN will be returned.
 
 It =SHALL= support the following response formats:
 
-| Format Extension | Accept Header            |
-|------------------+--------------------------|
-| .edn             | application/edn          |
-| .csv             | text/csv                 |
+| Format Extension | Accept Header   |
+|------------------+-----------------|
+| .edn             | application/edn |
+| .csv             | text/csv        |
+
 
 * Pagination Parameters
 

@@ -5,4 +5,4 @@
 
 (defn -main [& args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
-    (run-jetty app {:port port :join? false})))
+    (run-jetty #'app {:port port :join? false})))

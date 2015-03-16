@@ -7,9 +7,13 @@
                  [ring-server "0.3.1"]
                  [com.taoensso/timbre "3.3.1"]
                  [com.taoensso/tower "3.0.2"]
+                 [selmer "0.8.0"]
                  [enlive "1.1.5"]
+                 [grafter "0.4.0"]
+                 [clojail "1.0.6"]
                  [environ "1.0.0"]
                  [compojure "1.3.2"]
+                 [grafter/vocabularies "0.1.0"]
                  [ring/ring-defaults "0.1.3"]
                  [ring/ring-session-timeout "0.1.0"]
                  [ring-middleware-format "0.4.0"]
@@ -33,12 +37,10 @@
             [lein-environ "1.0.0"]
             [lein-ancient "0.6.0"]]
 
-
   :ring {:handler graftwerk.handler/app
          :init    graftwerk.handler/init
          :destroy graftwerk.handler/destroy
          :uberwar-name "graftwerk.war"}
-
 
   :profiles
   {:uberjar {:omit-source true
