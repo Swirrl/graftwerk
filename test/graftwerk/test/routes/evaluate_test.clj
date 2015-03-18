@@ -41,7 +41,7 @@
     (testing "with valid parameters"
       (let [test-request (evaluate-request)
             {:keys [status body]} (pipe-route test-request)]
-        (println body)
+
         (is (= 200 status))
         (is (= [:name :sex :age :person-uri] (:column-names body)))))))
 

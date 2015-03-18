@@ -77,10 +77,9 @@
         (let [dataset (:body response)
               accepts (get-in [:headers "accept"] req "application/edn")
               selected-format (select-content-type accepts)
-              content-type (get ext->mime-type selected-format)
-              selected-streamer (get mime-type->streamer content-type stream-edn)]
+              selected-streamer (get mime-type->streamer selected-format stream-edn)]
 
           (-> response
               (assoc :body (->stream dataset selected-streamer))
-              (assoc-in [:headers "Content-Type"] content-type)))
+              (assoc-in [:headers "Content-Type"] selected-format)))
         response))))
