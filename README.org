@@ -33,10 +33,10 @@ For more details see the [[http://www.w3.org/TR/html401/interact/forms.html#h-17
 
 The form data =MUST= consist of the following parts:
 
-| Name (form key) | Description                      | Content-Disposition | Content Type                        |
-|-----------------+----------------------------------+---------------------+-------------------------------------|
-| pipeline        | The Grafter Pipeline Code        | file                | application/edn                     |
-| data            | The input file to be transformed | file                | text/csv application/vnd.ms-excel * |
+| Name (form key) | Description                      | Content-Disposition | Content Type    |
+|-----------------+----------------------------------+---------------------+-----------------|
+| pipeline        | The Grafter Pipeline Code        | file                | application/edn |
+| data            | The input file to be transformed | file                | text/csv        |
 
 The =pipeline= MUST contain one and only one defpipe definition
 The =defpipe= MUST contain a single =->= form with any number of
@@ -50,8 +50,8 @@ operation forms inside.
       (operation ...)))
 #+END_SRC
 
-=*= NOTE it will also support xlsx with a mimetype of
-=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=
+/NOTE:/ we plan to add support for Excel formats in the future, but
+this is currently unsupported.
 
 ** Response Formats
 
@@ -70,26 +70,23 @@ It =SHALL= support the following response formats:
 | .edn             | application/edn |
 | .csv             | text/csv        |
 
-
 * Pagination Parameters
 
-If no pagination parameters are supplied then the pipeline will return
-the results of the whole pipeline execution in the specified format.
+If no page number is supplied then the pipeline will return the
+results of the whole pipeline execution in the specified format.
 
 If however the interface wishes to render a preview of the
 transformation on a page of data it can request just these results
 
-The route supports the following parameters:
+The route supports the following optional parameters:
 
 | Parameter   | Type    | Action                                                          |
 |-------------+---------+-----------------------------------------------------------------|
 | =page=      | Integer | Requests the page number =page=.  Assuming =page-size= results. |
 | =page-size= | Integer | Page must be specified                                          |
 
-#+BEGIN_SRC http :pretty
-POST http://localhost:5005/pipe/evaluate
-Accept: text/csv
-#+END_SRC
+Pages start at page =0=, and there is a default page size of =50=
+results.
 
 * Response Objects
 
