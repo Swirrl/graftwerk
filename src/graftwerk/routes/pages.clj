@@ -58,7 +58,7 @@
 (en/deftemplate form-page html-template
   [{:keys [title description form]}]
   [:html :title] (en/content "Graftwerk")
-  [:#contents :h2 en/first-child] (en/content title)
+  [:#contents :h2] (en/content title)
   [:#contents :section :p] (en/content description)
   [:#contents :form] (en/substitute (form-widget form)))
 
