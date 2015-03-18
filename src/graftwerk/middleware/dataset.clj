@@ -73,13 +73,16 @@
 (defn wrap-write-dataset [app]
   (fn write-dataset-middleware
     [req]
+    (log/info "Received request" req)
     (try
       (let [response (app req)
-            body (:body response)]
+            body (:body response)
+            accepts (get-in req [:headers "accept"] "application/edn")
+            selected-format (select-content-type accepts)]
+
+        (log/info "Client sent accept headers:" accepts "selected " selected-format)
         (cond
           (dataset? body) (let [dataset body
-                                accepts (get-in [:headers "accept"] req "application/edn")
-                                selected-format (select-content-type accepts)
                                 selected-streamer (get mime-type->streamer selected-format stream-edn)]
 
                             (-> response
@@ -88,7 +91,7 @@
 
           (map? body) (do
                         (log/warn "Validation failure:" body)
-                        (let [accepts (get-in [:headers "accept"] req "application/edn")
+                        (let [accepts (get-in req [:headers "accept"] "application/edn")
                               selected-format (select-content-type accepts)]
 
                           (-> response
