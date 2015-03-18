@@ -1,10 +1,30 @@
 #+TITLE: Graftwerk :: Pipeline Runner API Docs
 
+* Building
+
+You can build a release for Dapaas with: =lein uberjar=
+
+Starting the server can then be done with
+
+=java -jar graftwerk.jar=
+
+Or run in development with:
+
+=lein repl=
+
+The server will start on port 3000 visiting the following URL will
+send you to a test page where you can test the app and inspect some of
+the requests from your web browsers dev tools:
+
+[[http://localhost:3000/][http://localhost:3000/]]
+
+* API
+
 *NOTE:* The Graftwerk pipeline runner is a stateless service.  You
 submit requests to it, and receive responses.  It does not persist any
 state across requests.
 
-* Response Codes
+** Response Codes
 
 The following response codes may be returned on requests:
 
@@ -16,7 +36,7 @@ The following response codes may be returned on requests:
 |         422 | Unprocessable Entity   | The data is understood, but still invalid.  The response object may contain more information.              |
 |         500 | Server Error           | An error occured.  An error object may be returned in the response.                                        |
 
-* Evaluating a Pipeline as a pipe
+** Evaluating a Pipeline as a pipe
 
 | Route                     | Method |
 |---------------------------+--------|
@@ -25,7 +45,7 @@ The following response codes may be returned on requests:
 Sending a =POST= request to =/pipe/evaluate= will evaluate the
 pipeline returning the result based upon the accept header.
 
-** Required Parameters
+*** Required Parameters
 
 The POSTs body =MUST= contain valid =multipart/form-data= and =MUST=
 have the =Content-Type= of the request set to =multipart/form-data=.
@@ -53,7 +73,7 @@ operation forms inside.
 /NOTE:/ we plan to add support for Excel formats in the future, but
 this is currently unsupported.
 
-** Response Formats
+*** Response Formats
 
 The =/pipe= route is used to execute the =pipe= part of a
 transformation and consequently can only return tabular data formats,
@@ -70,7 +90,7 @@ It =SHALL= support the following response formats:
 | .edn             | application/edn |
 | .csv             | text/csv        |
 
-* Pagination Parameters
+** Pagination Parameters
 
 If no page number is supplied then the pipeline will return the
 results of the whole pipeline execution in the specified format.
@@ -88,7 +108,7 @@ The route supports the following optional parameters:
 Pages start at page =0=, and there is a default page size of =50=
 results.
 
-* Response Objects
+** Response Objects
 
 Responses are in EDN as the format can correctly convey type
 information which would need additional work to represent in JSON.
