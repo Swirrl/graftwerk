@@ -9,7 +9,7 @@
 
 (def app:csv "application/csv")
 
-(def app:edn "application/edn")
+(def app:edn "application/clojure")
 
 (defn get-file-request-data [path content-type]
   (let [file (io/file path)]
@@ -27,6 +27,9 @@
       (add-multipart :data (get-file-request-data "./test/graftwerk/example-data.csv" app:csv))
       (add-multipart :command "my-pipe")))
 
+(defn add-param [req param value]
+  (assoc-in req [:params param] value))
+
 (deftest paginate-seq-test
   (let [results (eval/paginate-seq (range 100) "10" "2")]
     (is (= '(20 21 22 23 24 25 26 27 28 29)
@@ -43,8 +46,14 @@
             {:keys [status body]} (pipe-route test-request)]
 
         (is (= 200 status))
-        (is (= [:name :sex :age :person-uri] (:column-names body)))))))
+        (is (= [:name :sex :age :person-uri] (:column-names body)))))
 
-(def graft-route (common-api-middleware eval/graft-route))
+    (testing "with invalid parameters"
+      (let [test-request (-> (evaluate-request)
+                             (add-param :page "foo"))
+            response (pipe-route test-request)]
 
-(deftest graft-route-test)
+        (is (= 422 (:status response)))))))
+
+(deftest graft-route-test
+  )

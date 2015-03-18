@@ -42,15 +42,16 @@
 ;; simple enough and good enough; even if technically incorrect with
 ;; regards to content-neg.
 
-(defn- select-content-type [accepts]
-  (let [{:keys [sub-type type]}
-        (->> accepts
-             parse-accept-header
-             (sort-by :q)
-             reverse
-             first)]
-    ;; rebuild the object into a string... stupid I know...
-    (str type "/" sub-type)))
+(defn- select-content-type [types]
+  (let [accepts (->> types
+                     parse-accept-header
+                     (sort-by :q)
+                     reverse)
+        {:keys [sub-type type]} (first accepts)
+        ;; rebuild the object into a string... stupid I know...
+        chosen (str type "/" sub-type)]
+    (log/info "Selected format: " chosen)
+    chosen))
 
 (def ^:private mime-type->streamer {"application/csv" stream-csv
                                     "application/edn" stream-edn})
@@ -72,14 +73,33 @@
 (defn wrap-write-dataset [app]
   (fn write-dataset-middleware
     [req]
-    (let [response (app req)]
-      (if (dataset? (:body response))
-        (let [dataset (:body response)
-              accepts (get-in [:headers "accept"] req "application/edn")
-              selected-format (select-content-type accepts)
-              selected-streamer (get mime-type->streamer selected-format stream-edn)]
+    (try
+      (let [response (app req)
+            body (:body response)]
+        (cond
+          (dataset? body) (let [dataset body
+                                accepts (get-in [:headers "accept"] req "application/edn")
+                                selected-format (select-content-type accepts)
+                                selected-streamer (get mime-type->streamer selected-format stream-edn)]
 
-          (-> response
-              (assoc :body (->stream dataset selected-streamer))
-              (assoc-in [:headers "Content-Type"] selected-format)))
-        response))))
+                            (-> response
+                                (assoc :body (->stream dataset selected-streamer))
+                                (assoc-in [:headers "Content-Type"] selected-format)))
+
+          (map? body) (do
+                        (log/warn "Validation failure:" body)
+                        (let [accepts (get-in [:headers "accept"] req "application/edn")
+                              selected-format (select-content-type accepts)]
+
+                          (-> response
+                              (assoc :body (pr-str body))
+                              (assoc-in [:headers "Content-Type"] "application/edn"))))
+
+          :else response))
+      (catch Exception ex
+        (log/warn ex "Unknown error caught.  Returning 500 with stack trace")
+        {:status 500
+         :headers {"Content-Type" "application/edn"}
+         :body (prn-str {:type :error
+                         :message (.getMessage ex)
+                         :class (str (.getName (class ex)))})}))))

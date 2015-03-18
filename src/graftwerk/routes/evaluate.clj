@@ -5,7 +5,8 @@
             [clojail.core :refer [sandbox safe-read]]
             [clojail.jvm :refer [permissions domain context]]
             [taoensso.timbre :as log]
-            [clojail.testers :refer [secure-tester-without-def]])
+            [clojail.testers :refer [secure-tester-without-def]]
+            [graftwerk.validations :refer [if-invalid valid? validate-evaluation-request]])
   (:import [java.io FilePermission]))
 
 (def default-namespace 'graftwerk.pipeline)
@@ -79,16 +80,12 @@
     (evaluate-command sandbox command data-file)))
 
 (defroutes pipe-route
-  (POST "/evaluate/pipe" {{:keys [pipeline data page-size page command]} :params}
-        (try
-          {:status 200 :body (-> data
-                                 (execute-pipe command pipeline)
-                                 (paginate page-size page))}
-          (catch Exception ex
-            (log/warn ex)
-            {:status 500 :body {:type :error
-                                :message (.getMessage ex)
-                                :class (str (.getClass ex))}}))))
+  (POST "/evaluate/pipe" {{:keys [pipeline data page-size page command] :as params} :params}
+        (if-invalid [errors (validate-evaluation-request params)]
+                     {:status 422 :body errors}
+                     {:status 200 :body (-> data
+                                           (execute-pipe command pipeline)
+                                           (paginate page-size page))})))
 
 (defroutes graft-route
   (POST "/evaluate/graft" []
