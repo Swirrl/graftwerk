@@ -29,12 +29,25 @@
   (#{"application/csv"} mime-type))
 
 
-(defn validate-evaluation-request [params]
+(defn validate-pipe-run-request [params]
   (b/validate params
               :page empty-or-number
               :page-size empty-or-number
-              [:pipeline :content-type] clojure-content
-              [:data :content-type] tabular-file))
+              :command v/required
+              :pipeline v/required
+              :data v/required
+              [:pipeline :filename] v/required
+              [:data :filename] v/required
+              ))
+
+(defn validate-graft-run-request [params]
+  (b/validate params
+              :command v/required
+              ;;[:pipeline :content-type] clojure-content
+              ;;[:data :content-type] tabular-file
+              [:pipeline :filename] v/required
+              [:data :filename] v/required))
+
 
 ;; This seems more logical than the implementations in bouncer to
 ;; me. Should investigate this when we have more time and perhaps

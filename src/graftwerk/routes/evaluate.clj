@@ -6,7 +6,7 @@
             [clojail.jvm :refer [permissions domain context]]
             [taoensso.timbre :as log]
             [clojail.testers :refer [secure-tester-without-def]]
-            [graftwerk.validations :refer [if-invalid valid? validate-evaluation-request]])
+            [graftwerk.validations :refer [if-invalid valid? validate-pipe-run-request validate-graft-run-request]])
   (:import [java.io FilePermission]))
 
 (def default-namespace 'graftwerk.pipeline)
@@ -81,12 +81,15 @@
 
 (defroutes pipe-route
   (POST "/evaluate/pipe" {{:keys [pipeline data page-size page command] :as params} :params}
-        (if-invalid [errors (validate-evaluation-request params)]
+        (if-invalid [errors (validate-pipe-run-request params)]
                      {:status 422 :body errors}
                      {:status 200 :body (-> data
                                            (execute-pipe command pipeline)
                                            (paginate page-size page))})))
 
+;; TODO support this route without pagination
 (defroutes graft-route
-  (POST "/evaluate/graft" []
-        {:status 200 :body {:foo :bar :baz :graft}}))
+  (POST "/evaluate/graft" {{:keys [pipeline data command] :as params} :params}
+        (if-invalid [errors (validate-graft-run-request params)]
+                    {:status 422 :body errors}
+                    {:status 200 :body "TODO generate RDF output here"})))
