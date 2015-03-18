@@ -3,7 +3,7 @@
             [net.cgrand.enlive-html :as en]
             [compojure.core :refer [defroutes GET]]))
 
-(auto-reload *ns*)
+;(auto-reload *ns*)
 
 (def html-template "build/test/graftwerk.html")
 
@@ -62,7 +62,8 @@
   [:#contents :section :p] (en/content description)
   [:#contents :form] (en/substitute (form-widget form))
   [:footer :.rhs :img] (en/set-attr :src
-                                    "/images/swirrl_r.png"))
+                                    "/images/swirrl_r.png")
+  [:footer :.lhs :p] (en/html-content "&copy; 2015 Swirrl IT Limited."))
 
 (defn render [content]
   (apply str content))
