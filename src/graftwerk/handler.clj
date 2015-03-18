@@ -1,16 +1,20 @@
 (ns graftwerk.handler
-  (:require [compojure.core :refer [defroutes routes]]
+  (:require [compojure.core :refer [defroutes routes GET]]
             [graftwerk.routes.evaluate :refer [pipe-route graft-route]]
             [graftwerk.routes.pages :refer [page-routes]]
             [graftwerk.middleware :refer [common-api-middleware
                                           development-middleware
                                           production-middleware]]
             [compojure.route :as route]
+            [ring.util.response :refer [redirect]]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.rotor :as rotor]
             [environ.core :refer [env]] :reload :verbose))
 
 (defroutes base-routes
+  (GET "/" []
+       (redirect "/pipe"))
+  (route/resources "/images" {:root "src/test-support/images"})
   (route/resources "/" {:root "build"})
   (route/not-found "Not Found"))
 

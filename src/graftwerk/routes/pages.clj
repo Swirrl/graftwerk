@@ -23,7 +23,7 @@
   [:input] (en/do->
             (en/set-attr :id id
                          :name id
-                         :value "my-pipe"
+                         :value placeholder
                          :placeholder placeholder)))
 
 (en/defsnippet submit-widget html-template [[:input (en/attr= :type "submit")]]
@@ -40,7 +40,7 @@
   [:p] (en/content advice))
 
 (en/defsnippet form-widget html-template [:#contents :form]
-  [{:keys [destination]}]
+  [{:keys [destination command-text placeholder]}]
   [:form] (en/do->
            (en/set-attr :action destination)
            (en/content
@@ -50,7 +50,7 @@
             (upload-widget "data"
                            :description "The data you wish to transform"
                            :advice "CSV or Excel formats supported")
-            (text-widget "command" "Command to execute (can be a graft or a pipe)" "my-pipe")
+            (text-widget "command" command-text placeholder)
             (numeric-widget "page" "Page number" 0 1000)
             (numeric-widget "page-size" "Page size" 0 1000)
             (submit-widget "Transform"))))
@@ -60,7 +60,9 @@
   [:html :title] (en/content "Graftwerk")
   [:#contents :h2] (en/content title)
   [:#contents :section :p] (en/content description)
-  [:#contents :form] (en/substitute (form-widget form)))
+  [:#contents :form] (en/substitute (form-widget form))
+  [:footer :.rhs :img] (en/set-attr :src
+                                    "/images/swirrl_r.png"))
 
 (defn render [content]
   (apply str content))
@@ -69,8 +71,12 @@
   (GET "/pipe" []
        (render (form-page {:title "Run a pipe"
                            :description "Upload a pipeline containing a grafter pipe and the tabular file you wish to transform"
-                           :form {:destination "/evaluate/pipe"}})))
+                           :form {:destination "/evaluate/pipe"
+                                  :command-text "Pipe to execute"
+                                  :placeholder "my-pipe"}})))
   (GET "/graft" []
        (render (form-page {:title "Run a graft"
                            :description "Upload a pipeline containing a grafter graft and the tabular file you wish to transform"
-                           :form {:destination "/evaluate/graft"}}))))
+                           :form {:destination "/evaluate/graft"
+                                  :command-text "Graft to execute"
+                                  :placeholder "my-graft"}}))))
