@@ -23,25 +23,25 @@
 
 (defn evaluate-request []
   (-> (req/request :post "/evaluate/pipe")
-      (add-multipart :pipeline (get-file-request-data "./test/graftwerk/example.clj" app:edn))
+      (add-multipart :pipeline (get-file-request-data "./test/graftwerk/example_pipeline.clj" app:edn))
       (add-multipart :data (get-file-request-data "./test/graftwerk/example-data.csv" app:csv))
-      (add-multipart :command "convert-persons-data")))
+      (add-multipart :command "my-pipe")))
 
 (deftest paginate-seq-test
-  (let [results (eval/paginate-seq (range 100) 10 2)]
+  (let [results (eval/paginate-seq (range 100) "10" "2")]
     (is (= '(20 21 22 23 24 25 26 27 28 29)
            results))))
 
 (deftest paginate-test
   (let [ds (make-dataset (repeat 100 [:a :b :c]))]
-    (is (= 20 (count (:rows (eval/paginate ds 20 1)))))))
+    (is (= 20 (count (:rows (eval/paginate ds "20" "1")))))))
 
 (deftest pipe-route-test
   (let [pipe-route (common-api-middleware eval/pipe-route)]
     (testing "with valid parameters"
       (let [test-request (evaluate-request)
             {:keys [status body]} (pipe-route test-request)]
-
+        (println body)
         (is (= 200 status))
         (is (= [:name :sex :age :person-uri] (:column-names body)))))))
 

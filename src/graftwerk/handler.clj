@@ -8,7 +8,7 @@
             [compojure.route :as route]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.rotor :as rotor]
-            [environ.core :refer [env]] :reload-all))
+            [environ.core :refer [env]] :reload :verbose))
 
 (defroutes base-routes
   (route/resources "/" {:root "build"})

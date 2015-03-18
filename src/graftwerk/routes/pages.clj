@@ -11,6 +11,7 @@
   [id description min max]
   [:label] (en/content description)
   [:input] (en/set-attr :id id
+                        :name id
                         :min min
                         :max max))
 
@@ -21,7 +22,8 @@
             (en/content description))
   [:input] (en/do->
             (en/set-attr :id id
-                         :value ""
+                         :name id
+                         :value "my-pipe"
                          :placeholder placeholder)))
 
 (en/defsnippet submit-widget html-template [[:input (en/attr= :type "submit")]]
@@ -32,7 +34,7 @@
   [id & {:keys [description advice]}]
   [:label] (en/do->
             (en/content description)
-            (en/set-attr "for" id))
+            (en/set-attr :for id))
   [:input] (en/do->
             (en/set-attr :id id :name id))
   [:p] (en/content advice))
@@ -50,7 +52,7 @@
                            :advice "CSV or Excel formats supported")
             (text-widget "command" "Command to execute (can be a graft or a pipe)" "my-pipe")
             (numeric-widget "page" "Page number" 0 1000)
-            (numeric-widget "page" "Page size" 0 1000)
+            (numeric-widget "page-size" "Page size" 0 1000)
             (submit-widget "Transform"))))
 
 (en/deftemplate form-page html-template

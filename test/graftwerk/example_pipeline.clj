@@ -1,8 +1,3 @@
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Function definitions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (do
 
   (defn ->integer
@@ -29,7 +24,7 @@
                       [foaf:age age]
                       [foaf:name (s name)]])))
 
-  (defpipe convert-persons-data
+  (defpipe my-pipe
     "Pipeline to convert tabular persons data into a different tabular format."
     [data-file]
     (-> (read-dataset data-file :format :csv)
@@ -41,6 +36,8 @@
                      "m" (s "male")}})))
 
 
-  (defgraft convert-persons-data-to-graph
+  (defgraft my-graft
     "Pipeline to convert the tabular persons data sheet into graph data."
-    convert-persons-data make-graph))
+    my-pipe make-graph)
+
+  )
