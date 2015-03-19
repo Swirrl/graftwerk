@@ -2,6 +2,18 @@
 
 * Building
 
+Graftwerk uses clojail and Java SecurityManagers to sandbox the
+execution of certain code.  For development it is recommended that you
+put the following java policy in your home directory, but production
+users should use something with stronger permissions.  Without it you
+will likely experience =java.security.AccessControlException='s.
+
+#+BEGIN_SRC text
+grant {
+  permission java.security.AllPermission;
+};
+#+END_SRC
+
 You can build a release for Dapaas with: =lein uberjar=
 
 Starting the server can then be done with
