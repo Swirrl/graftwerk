@@ -2,6 +2,8 @@
   (:require [grafter.tabular :refer [make-dataset dataset? write-dataset]]
             [grafter.tabular.common :refer [write-dataset* dataset->seq-of-seqs]]
             [grafter.rdf :refer [s]]
+            [grafter.rdf.formats :refer :all]
+            [grafter.rdf.io :refer [rdf-serializer]]
             [ring.middleware.format-response :refer [parse-accept-header]]
             [clojure.java.io :refer [output-stream]]
             [ring.util.mime-type :refer [default-mime-types]]
@@ -121,6 +123,18 @@
                           (-> response
                               (assoc :body (pr-str body))
                               (assoc-in [:headers "Content-Type"] "application/edn"))))
+
+          ;; TODO fix streaming of RDF
+          (sequential? body) (do
+                               (log/info "About to stream RDF")
+                               (-> body
+                                   (assoc :body (piped-input-stream (fn [ostream]
+                                                                      (try
+                                                                        (with-open [writer (clojure.java.io/writer ostream)]
+                                                                          (grafter.rdf/add (rdf-serializer writer :format rdf-ntriples)
+                                                                                           body))
+                                                                        (catch Exception ex
+                                                                          (log/warn ex "Unexpected exception whilst streaming RDF"))))))))
 
           :else response))
       (catch Exception ex

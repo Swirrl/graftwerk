@@ -6,7 +6,8 @@
             [clojail.jvm :refer [permissions domain context]]
             [taoensso.timbre :as log]
             [clojail.testers :refer [secure-tester-without-def]]
-            [graftwerk.validations :refer [if-invalid valid? validate-pipe-run-request validate-graft-run-request]])
+            [graftwerk.validations :refer [if-invalid valid? validate-pipe-run-request validate-graft-run-request]]
+            [grafter.pipeline :as pl])
   (:import [java.io FilePermission]))
 
 (def default-namespace 'graftwerk.pipeline)
@@ -68,13 +69,16 @@
                               page-size page-number)
                 (:column-names ds)))
 
+(defn read-pipeline [pipeline]
+  (-> pipeline :tempfile slurp safe-read))
+
 (defn execute-pipe
   "Takes the data to operate on (a ring file map) a command (a
   function name for a pipe or graft) and a pipeline clojure file and
   returns a Grafter dataset."
   [data command pipeline]
   (let [command (symbol command)
-        transformation (-> pipeline :tempfile slurp safe-read)
+        transformation (read-pipeline pipeline)
         data-file (-> data :tempfile .getPath)
         sandbox (build-sandbox transformation data-file)]
     (evaluate-command sandbox command data-file)))
@@ -87,9 +91,45 @@
                                            (execute-pipe command pipeline)
                                            (paginate page-size page))})))
 
+(defn execute-graft [data command pipeline]
+  (let [forms (read-pipeline pipeline)
+        command (symbol command)
+        data-file (-> data :tempfile .getPath)
+        sandbox (build-sandbox forms data-file)]
+
+    (evaluate-command sandbox command data-file)))
+
 ;; TODO support this route without pagination
 (defroutes graft-route
   (POST "/evaluate/graft" {{:keys [pipeline data command] :as params} :params}
         (if-invalid [errors (validate-graft-run-request params)]
                     {:status 422 :body errors}
-                    {:status 200 :body "TODO generate RDF output here"})))
+                    {:status 200 :body (execute-graft data command pipeline)})))
+
+;;
+;; Items below this line are largely unimplemented...
+;;
+
+(defn find-graft [name forms]
+  (if-let [graft (first (filter (fn [g]
+                             (when (and (= :graft (:type g))
+                                        (= :name (:name g)))
+                               g))
+                                (pl/find-pipelines forms default-namespace {})))]
+    graft
+    (throw (RuntimeException. "Could not find graft" name))))
+
+
+(comment ;; TODO
+  (defn execute-graft-with-row [row data command pipeline]
+    (let [forms (read-pipeline pipeline)
+          command (symbol command)
+          pipe-command (-> forms
+                           (pl/find-pipelines default-namespace {})
+                           (find-graft command)
+                           :body
+                           last)
+          ds (-> data
+                 (execute-pipe pipe-command pipeline))]
+      ;; TODO
+      )))
