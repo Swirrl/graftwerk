@@ -129,7 +129,7 @@
                                (log/info "About to stream RDF")
                                (-> response
                                    ;; force n-triples for now to save content-neg headaches...
-                                   (assoc-in :headers ["Content-Type" "application/n-triples"])
+                                   (assoc-in [:headers "Content-Type"] "application/n-triples")
                                    (assoc :body (piped-input-stream (fn [ostream]
                                                                       (try
                                                                         (with-open [writer (clojure.java.io/writer ostream)]
