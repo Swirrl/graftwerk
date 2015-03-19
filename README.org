@@ -43,7 +43,7 @@ The following response codes may be returned on requests:
 
 | Route                     | Method |
 |---------------------------+--------|
-| =/pipe/evaluate(.format)= | =POST= |
+| =/pipe/evaluate=          | =POST= |
 
 Sending a =POST= request to =/pipe/evaluate= will evaluate the
 pipeline returning the result based upon the accept header.
