@@ -1,5 +1,6 @@
 (ns graftwerk.routes.evaluate
   (:require [compojure.core :refer [defroutes POST]]
+            [clojure.stacktrace :refer [root-cause]]
             [clojure.java.io :as io]
             [grafter.tabular :refer [make-dataset dataset?]]
             [clojail.core :refer [sandbox safe-read]]
@@ -8,10 +9,12 @@
             [clojail.testers :refer [secure-tester-without-def]]
             [graftwerk.validations :refer [if-invalid valid? validate-pipe-run-request validate-graft-run-request]]
             [grafter.pipeline :as pl])
-  (:import [java.io FilePermission]))
+  (:import [java.io FilePermission]
+           (clojure.lang LispReader$ReaderException)))
 
 (def default-namespace 'graftwerk.pipeline)
 
+;; TODO load this declaration from a file editable by the devops team.
 (defn namespace-declaration []
   (let [requires '(:require
                    [grafter.tabular :refer [defpipe defgraft column-names columns rows
@@ -30,7 +33,10 @@
 (defn namespace-qualify [command]
   (symbol (str default-namespace "/" command)))
 
-(defn build-sandbox [pipeline-sexp data]
+(defn build-sandbox
+  "Build a clojailed sandbox configured for Grafter pipelines.  Takes
+  a parsed sexp containing the grafter pipeline file."
+  [pipeline-sexp data]
   (let [context (-> (FilePermission. data "read")
                     permissions
                     domain
@@ -70,7 +76,18 @@
                 (:column-names ds)))
 
 (defn read-pipeline [pipeline]
-  (-> pipeline :tempfile slurp safe-read))
+  (let [code (-> pipeline :tempfile slurp)]
+
+    ;; FUGLY hack beware!!!
+    ;;
+    ;; read/read-string and safe-read only read one
+    ;; form, not all of them from a string.  So we need to wrap the
+    ;; forms up into one.
+    ;;
+    ;; TODO clean this up!
+    (safe-read (str "(do "
+                    code
+                    ")"))))
 
 (defn execute-pipe
   "Takes the data to operate on (a ring file map) a command (a
