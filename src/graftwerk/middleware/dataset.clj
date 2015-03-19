@@ -127,10 +127,11 @@
           ;; TODO fix streaming of RDF
           (sequential? body) (do
                                (log/info "About to stream RDF")
-                               (-> body
+                               (-> response
                                    (assoc :body (piped-input-stream (fn [ostream]
                                                                       (try
                                                                         (with-open [writer (clojure.java.io/writer ostream)]
+                                                                          (log/info "Serialising RDF")
                                                                           (grafter.rdf/add (rdf-serializer writer :format rdf-ntriples)
                                                                                            body))
                                                                         (catch Exception ex
