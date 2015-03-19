@@ -41,9 +41,9 @@ The following response codes may be returned on requests:
 
 ** Evaluating a Pipeline as a pipe
 
-| Route                     | Method |
-|---------------------------+--------|
-| =/pipe/evaluate=          | =POST= |
+| Route            | Method |
+|------------------+--------|
+| =/evaluate/pipe= | =POST= |
 
 Sending a =POST= request to =/pipe/evaluate= will evaluate the
 pipeline returning the result based upon the accept header.
