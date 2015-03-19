@@ -1,6 +1,7 @@
 (ns graftwerk.middleware.dataset
   (:require [grafter.tabular :refer [make-dataset dataset? write-dataset]]
             [grafter.tabular.common :refer [write-dataset* dataset->seq-of-seqs]]
+            [grafter.rdf :refer [s]]
             [ring.middleware.format-response :refer [parse-accept-header]]
             [clojure.java.io :refer [output-stream]]
             [ring.util.mime-type :refer [default-mime-types]]
@@ -56,6 +57,29 @@
 (def ^:private mime-type->streamer {"application/csv" stream-csv
                                     "application/edn" stream-edn})
 
+(defn map-values [f m]
+  (let [kvs (map (fn [[k v]] [k (f v)]) m)
+        keys (map first kvs)
+        vals (map second kvs)]
+    (zipmap keys vals)))
+
+(defn serialise-grafter-s
+  "The grafter s function returns reified Objects with anonymous types
+  and needs special attention when serialised out again.
+
+  This is a hack, which we should remove when we fix grafter.rdf/s to
+  return something more friendly and serialisable."
+  [ds]
+  (let [reified-s-classes #{(class (s "foo"))
+                            (class (s "foo" :blah))}]
+
+    (make-dataset (map (partial map-values (fn [st]
+                                             (if (reified-s-classes (class st))
+                                               (str st)
+                                               st)))
+                       (:rows ds))
+                  (:column-names ds))))
+
 (defn- ->stream
   "Takes a dataset and a supported tabular format and returns a
   piped-input-stream to stream the dataset to the client."
@@ -64,8 +88,7 @@
    (fn [ostream]
      (try
        (with-open [writer (clojure.java.io/writer ostream)]
-         (log/info "w" writer "o" ostream "ds" dataset)
-         (streamer writer dataset))
+         (streamer writer (serialise-grafter-s dataset)))
        (log/info "Dataset streamed")
        (catch Exception ex
          (log/warn ex "Unexpected Exception whilst streaming dataset"))))))
@@ -87,7 +110,8 @@
 
                             (-> response
                                 (assoc :body (->stream dataset selected-streamer))
-                                (assoc-in [:headers "Content-Type"] selected-format)))
+                                (assoc-in [:headers "Content-Type"] selected-format)
+                                (assoc-in [:headers "Content-Disposition"] "attachment; filename=\"results\"")))
 
           (map? body) (do
                         (log/warn "Validation failure:" body)
