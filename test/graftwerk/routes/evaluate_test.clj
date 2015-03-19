@@ -23,8 +23,8 @@
 
 (defn evaluate-request []
   (-> (req/request :post "/evaluate/pipe")
-      (add-multipart :pipeline (get-file-request-data "./test/graftwerk/example_pipeline.clj" app:edn))
-      (add-multipart :data (get-file-request-data "./test/graftwerk/example-data.csv" app:csv))
+      (add-multipart :pipeline (get-file-request-data "./test/data/example_pipeline.clj" app:edn))
+      (add-multipart :data (get-file-request-data "./test/data/example-data.csv" app:csv))
       (add-multipart :command "my-pipe")))
 
 (defn add-param [req param value]

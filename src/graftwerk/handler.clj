@@ -9,7 +9,7 @@
             [ring.util.response :refer [redirect]]
             [taoensso.timbre :as timbre]
             [taoensso.timbre.appenders.rotor :as rotor]
-            [environ.core :refer [env]] :reload :verbose))
+            [environ.core :refer [env]] :reload))
 
 (defroutes base-routes
   (GET "/" []
