@@ -14,6 +14,13 @@ grant {
 };
 #+END_SRC
 
+Alternatively this can be set by setting the system property
+=java.security.policy= at jvm startup e.g.
+
+#+BEGIN_SRC text
+java -jar graftwerk.jar -Djava.security.policy==~/.java.policy
+#+END_SRC
+
 You can build a release for Dapaas with: =lein uberjar=
 
 Starting the server can then be done with
