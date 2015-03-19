@@ -18,6 +18,9 @@ the requests from your web browsers dev tools:
 
 [[http://localhost:3000/][http://localhost:3000/]]
 
+NOTE: that testing in a browser may be misleading because the browser
+sets different accept headers.
+
 * API
 
 *NOTE:* The Graftwerk pipeline runner is a stateless service.  You
