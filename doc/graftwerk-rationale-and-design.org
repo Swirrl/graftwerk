@@ -1,0 +1,369 @@
+#+TITLE: Dapaas Report WP4.2
+#+SETUPFILE: ~/org/vendor/org-html-themes/setup/theme-readtheorg.setup
+# #+SETUPFILE: ~/org/vendor/org-html-themes/setup/theme-bigblow.setup
+
+* Executive Summary
+
+A key problem in delivering a web based data as a service platform for
+open data is making it easy for users to host their data, import it,
+and present it in a way that makes sense for others and the web itself.
+
+Linked Data's biggest benefit is in representing data in a way that is
+designed for the web.  Data points and the vocabularies for modeling
+them need to be represented by URI's, and in the same way that a URL
+lets you globally connect web pages together; URI's let you globally
+connect data together.
+
+Transforming the usually tabular data that people have already, into
+data for the web, hosted on the DaPaaS platform, is one of the primary
+concerns of the DaPaaS project.
+
+This document describes Grafter and Graftwerk two underlying
+technologies that support the transformation process and user
+interface components developed in TXXX for building and executing
+data transformations.
+
+* Requirements Summary
+
+High level needs such as making data appropriate to the audience
+consuming it, and to the web medium it lives in, usually neccesitate
+some form of transformation process.
+
+Transforming data is critically important to being able to derive
+utility from it, but in any transformation process there is a risk
+that additional errors may be introduced into the data.  Consequently
+in addition to methodologies to help formalise processes around
+transformation and error mitigation there is a clear role for
+interactive tools to automate repetetive and error prone tasks, and
+for them to do so in a way that minimises the likelyhood of
+introducing errors.
+
+The vast majority of data that users are skilled in handling is
+tabular in nature, and is typically manipulated in Spreadsheets, or
+relational databases.  These tools have been common place since the
+1980s and users know how to use them.
+
+This poses a familiarity challenge when transforming the data into the
+graph of connections required for linked data.  For this reason we
+believe a strong requirement is to support this transformation process
+through a familiar spreadsheet-like interface.
+
+Additionally we have identified two distinct user groups, with
+divergent requirements who both have important expertise that need to
+be leveraged if we are to enable the collaboration and seamless
+workflows that are required to power the open data revolution.
+
+** Supporting Knowledge Workers
+
+The first and perhaps most important group of users to empower are the
+knowledge workers, who are used to handling and processing tabular
+data in tools such as Excel.  These users are typically domain
+experts, skilled in manipulating the tabular data they are custodians
+of.  This demographic provide domain expertise, knowledge of
+statistics and particular datasets.  They often know how the data was
+assembled and what conclusions and techniques can be appropriately
+applied to the data.
+
+Typically these users spend a large amount of time repeatedly applying
+the same transformations to data.  For example generating updated
+figures for a monthly report might require tedious, error prone,
+manual transformations to be applied to the dataset every month.
+
+We believe that these users are best served by an interactive
+graphical user interface, that presents a familiar spreadsheet like
+interface but one that is focused on extracting, transforming and
+loading data.
+
+User interfaces to enable non-developer programming have been a holy
+grail in computing since the early 1980's.  However interfaces which
+present their users a turing complete programming model have largely
+been unsuccessful.  This is primarily because they become
+simultaneously too complicated for non-developers to use and too
+restrictive for developers.
+
+The solution to this is to simplify the programming model presented
+through the interface to explicitly try and avoid turing completeness.
+This approach has enjoyed wide success, leading to innovations such as
+Spreadsheets (a restricted form of data-flow programming), musical
+synthesisers and trackers, email filtering, as well as simple tools
+for recording and automating image processing tasks.
+
+The most successful end user programming tools prevent constructs for
+complex control flow, such as looping, recursion and branching
+statements in order to prevent users from the complexities and
+problems that go with being able to express all computible
+transformations.
+
+We believe that there is a fertile middleground where users can have
+both an intuitive and familiar user interface and just enough
+expressivity to be able to transform the majority of the datasets they
+encounter.  Importantly this constraint should help guarantee
+properties such as termination, which for example make it impossible
+for users to develop programs that get stuck in infinite loops.
+
+** Supporting Software Developers
+
+The second demographic of target users are software developers.
+Developers are important because they have the expertise to build
+bespoke complex transformations that cannot be expressed through the
+UI or by domain experts.  Also developers may be required for
+transformations that require high levels of validation, integration and
+automatation, or need additional tool support.
+
+This demographic may lack some of the domain knowledge of the experts,
+but they have the experience required to produce and debug far more
+complex transformations.  Transformations that can be produced only
+via a turing complete programming language.
+
+We believe that this audience are best served by well documented API's
+that are compatible with the user interface, and that the best way to
+achieve this is to ensure that the UI uses the same API's developers
+do.
+
+In order to build additional tooling and support for more complex
+transformations developers demand a clear separation of
+responsibilities between system components.  So the API's for
+transforming data should be cleanly separated from other superfluous
+components such as the user interface.  This is a significant problem
+with the OpenRefine system, who's user interface is tightly coupled to
+its transformation engine, making it hard for developers to tightly
+integrate with.
+
+* System Design & Integration
+
+There are two primary technology outputs developed by Swirrl and
+deployed as supporting infrastructure on the Datagraft platform.  The
+first is Grafter; an opensource domain specific programming language
+for expressing data transformations.  Grafter provides the library of
+primitive operations for transforming tabular data into linked data,
+along with a suite of utilities useful for developers working on ETL
+(Extract, Transform and Load) systems.
+
+The second technology, Graftwerk, exists to integrate user created
+Grafter transformations into the Datagraft platform at the service
+layer.  Graftwerk implements the "transformation as a service"
+component, providing a RESTFUL service that can execute Grafter
+transformations on source data.
+
+Graftwerk delivers two key features to the datagraft platform:
+
+- Executing Grafter transformations, applying them to the source
+  data and returning the resulting transformed data in the desired
+  format (either tabular or RDF).
+- Applying Grafter transformations to a preview of the data,
+  allowing a paginated preview of the transformation formatted for
+  display to the end user.
+
+The user Grafterizer interface developed in WPXXX in collaboration
+with SINTEF uses the underlying Graftwerk service to provide both
+its realtime preview functionality and the capability to execute
+transformations on whole datasets.
+
+[[file:Grafter-Dapaas-Components.png][file:~/Documents/Swirrl/DaPaaS/Grafter-Dapaas-Components.png]]
+
+** Grafter
+
+[[http://grafter.org/][Grafter]] is an opensource API and suite of software tools created by
+Swirrl in the Dapaas project to support complex and reliable data
+transformations.
+
+Despite its infancy the framework has been used by Swirrl for over a
+year to help perform large scale ETL jobs, converting 1000s of
+datasets of tabular data into Linked Data.
+
+Some key Grafter benefits are:
+
+- It has been built from the beginning to support a clean separation
+  of concerns from both graphical tools for building transformations
+  and import services.
+- Transformations are implemented as pure functions on immutable data,
+  which makes things significantly easier to reason about.
+- It has been designed in such a way to help support a interactive
+  Spreadsheet like interface.
+- It supports large (industry scale) data transformations efficiently.
+  Unlike some other tools it takes a streaming approach to
+  transformation, which means it can transform datasets larger than
+  available memory.
+- It supports an easy way to convert tabular data into Linked Data,
+  via graph templates.
+- It has an efficient streaming implementation of a normalising melt
+  operation, that lets you easily transform cross tabulations
+  featuring arbitrary numbers of categories, which are frequently used
+  to summarise data, back into a normalised representation suited for
+  machine processing.  A common use case is in converting pivot
+  tables.
+- It provides API's for serialising Linked Data in almost all of its
+  standard serialisations.
+- It provides integration with triple stores via standard interfaces.
+- It has a highly modular design.
+
+*** Grafter Design
+
+Grafter is broken down into a variety of modules in order to cleanly
+demarcate functionality.  These modules broadly fall into two
+categories identified by the namespaces `grafter.rdf` and
+`grafter.tabular`.
+
+[[file:grafter-architecture-stack-diagram.png][file:~/Documents/Swirrl/DaPaaS/grafter-architecture-stack-diagram.png]]
+
+These two primary divisions represent the two sides of the ETL problem
+Grafter is trying to solve.
+
+- The cleaning and transformation of tabular data.
+- The conversion and loading of that data into Linked Data (RDF).
+
+The `grafter.tabular` namespace contains a wide variety of useful
+functions for filtering data by row, column or cell contents; and
+applying arbitrary transformation functions to cells through functions
+like `derive-column`.  Additionally more complex and important
+functions for normalising data into a more uniform form exist such as
+`fill-when` and `melt`.
+
+Functionality is also being added to help materialise errors and
+ensure they can be displayed in the appropriate cell or context where
+they occur.
+
+*** Pipes
+
+Tabular Grafter transformations are typically expressed as a sequence
+of stepwise operations on whole tables of data.  All tabular
+operations are simply pure functions from a `Dataset` (a table) to a
+`Dataset`.
+
+This can be seen in the Grafter code below:
+
+#+BEGIN_SRC clojure
+(-> (read-dataset data-file)
+    (make-dataset [:area :name :period "measure" "lcl" "ucl"])
+    (drop-rows 1)
+    (melt :area :name :period)
+    (derive-column :area-uri [:area] statistical-geography)
+    (derive-column :alc-hosp-uri [:variable :period :area] alc-hosp-id))
+#+END_SRC
+
+This tabular dataset transformation processes a spreadsheet containing
+hospital admissions due to alcohol in Glasgow, a final step (not yet
+shown) converts it into Linked Data.
+
+Each line is a function call that receives a `Dataset` (table) and
+returns a new one that has been transformed.  Sequences of tabular
+operations such as this, where a table is received as input and
+returned as output are called pipes.  When operations are composed
+together like this on tabular datasets, we refer to them inside
+Grafter as pipes.
+
+Pipes are just one or more pure functions composed together with the
+restriction that they receive a `Dataset` as their first argument, and
+must return a Dataset as their return value.
+
+[[file:pipe-composition.png][file:~/Documents/Swirrl/DaPaaS/pipe-composition.png]]
+
+The interesting property about pipes is that they can be composed
+together arbitrarily, and you'll always get another pipe.
+Additionally because the inputs, outputs and intermediate steps to
+pipes are always tables; they are very intuitive for users to
+manipulate and use.
+
+*** Grafts
+
+In order to publish Linked Data a final transformation into a graph
+needs to occur.  To do this, a final step is required to map each row
+of source data into a graph.
+
+[[file:graft.png][file:~/Documents/Swirrl/DaPaaS/graft.png]]
+
+Because a Graft takes a table and returns a lazy sequence of quads
+representing the linked data graph, they don't have the composition
+property that pipes do.  However, additional filtering steps can be
+added to the stream of quads if necessary.
+
+Typically the bulk of transformations are best performed whilst the
+data is in the table, though post processing can be performed by
+filter
+
+Grafter supports a simple DSL to express the conversion of each row
+into a graph through a simple graph template:
+
+#+BEGIN_SRC clojure
+(graph-fn [{:keys [alc-hosp-uri area-uri name period variable value]}]
+            (graph (base-graph "health/alcohol-hospital-admission")
+                   [alc-hosp-uri
+                    [rdf:a "http://purl.org/linked-data/cube#Observation"]
+                    [rdfs:label (rdfstr (str "Alcohol hospital admissions, "
+                                             variable ", "
+                                             period ", "
+                                             name))]
+                     [(alc-hosp variable) (parseValue value)]
+                     [qb:dataSet "http://linked.glasgow.gov.uk/data/health/alcohol-hospital-admission/"]
+                     [scot:refPeriod (year-prefix period)]
+                     [scot:RefArea area-uri]]))
+#+END_SRC
+
+The above code is used to express the mapping of columns in a tabular
+Dataset into its position in a Linked Data graph.
+
+** Graftwerk
+
+The Dapaas Datagraft platform integrates an array of components and
+technologies from consortium members, and 3rd parties such as Amazon.
+Due to the wide range of technologies and organisations, each with
+their own standards and deployment processes, a Service Oriented
+Architecture (SOA) approach to design was taken.
+
+One of the primary means of integration within the Datagraft platform
+is via RESTFUL API services for the major components.  Consequently
+other Datagraft sub systems, such as the transformation builder
+(Grafterizer) and the catalog, need to integrate with Grafter via a
+RESTFUL service.  This is the role of the Graftwerk service.
+
+Graftwerk provides a sandboxed execution environment for Grafter
+transformations and essentially supports two primary platform
+features:
+
+1. The ability to execute a supplied Grafter transformation on the
+   entirity of a supplied tabular dataset.  The results of the whole
+   transformation are returned.
+
+2. The ability to specify a page of data in the tabular data to apply
+   the supplied Grafter transformation to, and to return a preview of
+   the results of the transformation on that subset.
+
+The first of these features ensures that transformations hosted on
+Datagraft can be applied to arbitrary datasets, generating results for
+download or hosting.  Whilst the second feature for generating live
+previews of the transformation is critical to provide a high quality
+interactive user experience via the interface.  Graftwerk supports
+both of these features on both kinds of transformation, pipes and
+grafts.
+
+** Graftwerk Service Design
+
+Building the kinds of cohesive and integrated experiences that users
+expect, always leads to an integration challenge; especially when
+integration involves collaboration across consortium and
+organisational boundaries, and there is a desire to reuse work in
+other contexts.
+
+These desires for tight integration and reuse are often fundamentally
+at odds, especially if the services are stateful.  Graftwerk itself
+integrates with the Datagraft and other platforms in a completely
+stateless manner, reducing coupling between components, enabling reuse
+and simplifying the architecture.
+
+The RESTFUL interface Graftwerk exposes is therefore effectively also
+a pure function, that receives essentially two arguments, the
+transformation code to execute and the data to operate on.
+
+[[file:Graftwerk-Request.png][file:~/Documents/Swirrl/DaPaaS/Graftwerk-Request.png]]
+
+In response Graftwerk applies the supplied transformation function to
+the data, executing it in a securable sandboxed environment and
+returning the results as a response.
+
+[[file:Graftwerk-Response.png][file:~/Documents/Swirrl/DaPaaS/Graftwerk-Response.png]]
+
+Previews, which are ultimately meant for display in a UI context will
+be returned in a slightly different format to the true data
+transformation.  This is especially important for Grafts, as they need
+to locate the position of a linked data fragments or errors in the
+graph template.
