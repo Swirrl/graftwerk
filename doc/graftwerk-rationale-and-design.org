@@ -201,8 +201,8 @@ Some key Grafter benefits are:
 
 Grafter is broken down into a variety of modules in order to cleanly
 demarcate functionality.  These modules broadly fall into two
-categories identified by the namespaces `grafter.rdf` and
-`grafter.tabular`.
+categories identified by the namespaces =grafter.rdf= and
+=grafter.tabular=.
 
 [[file:grafter-architecture-stack-diagram.png]]
 
@@ -212,12 +212,12 @@ Grafter is trying to solve.
 - The cleaning and transformation of tabular data.
 - The conversion and loading of that data into Linked Data (RDF).
 
-The `grafter.tabular` namespace contains a wide variety of useful
+The =grafter.tabular= namespace contains a wide variety of useful
 functions for filtering data by row, column or cell contents; and
 applying arbitrary transformation functions to cells through functions
-like `derive-column`.  Additionally more complex and important
+like =derive-column=.  Additionally more complex and important
 functions for normalising data into a more uniform form exist such as
-`fill-when` and `melt`.
+=fill-when= and =melt=.
 
 Functionality is also being added to help materialise errors and
 ensure they can be displayed in the appropriate cell or context where
@@ -227,8 +227,8 @@ they occur.
 
 Tabular Grafter transformations are typically expressed as a sequence
 of stepwise operations on whole tables of data.  All tabular
-operations are simply pure functions from a `Dataset` (a table) to a
-`Dataset`.
+operations are simply pure functions from a =Dataset= (a table) to a
+=Dataset=.
 
 This can be seen in the Grafter code below:
 
@@ -245,7 +245,7 @@ This tabular dataset transformation processes a spreadsheet containing
 hospital admissions due to alcohol in Glasgow, a final step (not yet
 shown) converts it into Linked Data.
 
-Each line is a function call that receives a `Dataset` (table) and
+Each line is a function call that receives a =Dataset= (table) and
 returns a new one that has been transformed.  Sequences of tabular
 operations such as this, where a table is received as input and
 returned as output are called pipes.  When operations are composed
@@ -253,7 +253,7 @@ together like this on tabular datasets, we refer to them inside
 Grafter as pipes.
 
 Pipes are just one or more pure functions composed together with the
-restriction that they receive a `Dataset` as their first argument, and
+restriction that they receive a =Dataset= as their first argument, and
 must return a Dataset as their return value.
 
 [[file:pipe-composition.png]]
