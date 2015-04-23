@@ -52,7 +52,6 @@
                            :advice "CSV or Excel formats supported")
             (text-widget "command" command-text placeholder)
             (numeric-widget "page" "Page number" 0 1000)
-            ;;(text-widget "page" "Page number" "foo bar")
             (numeric-widget "page-size" "Page size" 0 1000)
             (submit-widget "Transform"))))
 
