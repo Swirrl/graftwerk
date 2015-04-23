@@ -159,7 +159,7 @@ with SINTEF uses the underlying Graftwerk service to provide both
 its realtime preview functionality and the capability to execute
 transformations on whole datasets.
 
-[[file:Grafter-Dapaas-Components.png][file:~/Documents/Swirrl/DaPaaS/Grafter-Dapaas-Components.png]]
+[[file:Grafter-Dapaas-Components.png]]
 
 ** Grafter
 
@@ -204,7 +204,7 @@ demarcate functionality.  These modules broadly fall into two
 categories identified by the namespaces `grafter.rdf` and
 `grafter.tabular`.
 
-[[file:grafter-architecture-stack-diagram.png][file:~/Documents/Swirrl/DaPaaS/grafter-architecture-stack-diagram.png]]
+[[file:grafter-architecture-stack-diagram.png]]
 
 These two primary divisions represent the two sides of the ETL problem
 Grafter is trying to solve.
@@ -256,7 +256,7 @@ Pipes are just one or more pure functions composed together with the
 restriction that they receive a `Dataset` as their first argument, and
 must return a Dataset as their return value.
 
-[[file:pipe-composition.png][file:~/Documents/Swirrl/DaPaaS/pipe-composition.png]]
+[[file:pipe-composition.png]]
 
 The interesting property about pipes is that they can be composed
 together arbitrarily, and you'll always get another pipe.
@@ -270,7 +270,7 @@ In order to publish Linked Data a final transformation into a graph
 needs to occur.  To do this, a final step is required to map each row
 of source data into a graph.
 
-[[file:graft.png][file:~/Documents/Swirrl/DaPaaS/graft.png]]
+[[file:graft.png]]
 
 Because a Graft takes a table and returns a lazy sequence of quads
 representing the linked data graph, they don't have the composition
@@ -354,13 +354,13 @@ The RESTFUL interface Graftwerk exposes is therefore effectively also
 a pure function, that receives essentially two arguments, the
 transformation code to execute and the data to operate on.
 
-[[file:Graftwerk-Request.png][file:~/Documents/Swirrl/DaPaaS/Graftwerk-Request.png]]
+[[file:Graftwerk-Request.png]]
 
 In response Graftwerk applies the supplied transformation function to
 the data, executing it in a securable sandboxed environment and
 returning the results as a response.
 
-[[file:Graftwerk-Response.png][file:~/Documents/Swirrl/DaPaaS/Graftwerk-Response.png]]
+[[file:Graftwerk-Response.png]]
 
 Previews, which are ultimately meant for display in a UI context will
 be returned in a slightly different format to the true data
