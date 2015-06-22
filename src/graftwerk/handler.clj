@@ -8,7 +8,7 @@
             [compojure.route :as route]
             [ring.util.response :refer [redirect]]
             [taoensso.timbre :as timbre]
-            [taoensso.timbre.appenders.rotor :as rotor]
+            [taoensso.timbre.appenders.core :as appenders]
             [environ.core :refer [env]] :reload))
 
 (defroutes base-routes
@@ -22,17 +22,9 @@
   "init will be called once when app is deployed as a servlet on an
   app server such as Tomcat put any initialization code here"
   []
-  (timbre/set-config!
-    [:appenders :rotor]
-    {:min-level :info
-     :enabled? true
-     :async? false ; should be always false for rotor
-     :max-message-per-msecs nil
-     :fn rotor/appender-fn})
 
-  (timbre/set-config!
-   [:shared-appender-config :rotor]
-   {:path "graftwerk.log" :max-size (* 512 1024) :backlog 10})
+  (timbre/merge-config!
+   {:appenders {:spit (appenders/spit-appender {:path "graftwerk.log"})}})
 
   (timbre/info "\n-=[ graftwerk started successfully"
                (when (env :dev) "using the development profile") "]=-"))
