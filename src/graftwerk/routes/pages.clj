@@ -26,6 +26,12 @@
                          :value placeholder
                          :placeholder placeholder)))
 
+(en/defsnippet checkbox-widget "src/html/templates/includes/input_checkboxes.hbs" [:.form_group [:.checkbox (en/nth-child 2)]]
+  [id description]
+  [:span] (en/content description)
+  [:input] (en/set-attr :id id
+                        :name id))
+
 (en/defsnippet submit-widget html-template [[:input (en/attr= :type "submit")]]
   [name]
   [:input] (en/set-attr :value name))
@@ -59,8 +65,9 @@
   [{:keys [title description]} form]
   [:html :title] (en/content "Graftwerk")
   [:#contents :h2] (en/content title)
-  [:#contents :section :p] (en/content description)
-  [:#contents :form] (en/substitute form)
+  [:#contents :form] (en/do->
+                      (en/substitute form)
+                      (en/prepend (en/html [:p description])))
   [:footer :.rhs :img] (en/set-attr :src
                                     "/images/swirrl_r.png")
   [:footer :.lhs :p] (en/html-content "&copy; 2015 Swirrl IT Limited."))
@@ -71,7 +78,7 @@
 (defroutes page-routes
   (GET "/pipe" []
        (render (form-page {:title "Run a pipe"
-                           :description "Upload a pipeline containing a grafter pipe and the tabular file you wish to transform"}
+                           :description "Upload a pipeline containing a grafter pipe and the tabular file you wish to transform."}
 
                           (form-widget {:destination "/evaluate/pipe"
                                         :command-text "Pipe to execute"
@@ -80,9 +87,10 @@
                                        (numeric-widget "page-size" "Page size (optional)" 0 1000)))))
   (GET "/graft" []
        (render (form-page {:title "Run a graft"
-                           :description "Upload a pipeline containing a grafter graft and the tabular file you wish to transform"}
+                           :description "Upload a pipeline containing a grafter graft and the tabular file you wish to transform.  If you want to preview the graft specify a row to render."}
 
                           (form-widget {:destination "/evaluate/graft"
                                         :command-text "Graft to execute"
                                         :placeholder "my-graft"}
-                                       (numeric-widget "row" "Row to preview (optional)" 0 1000))))))
+                                       (numeric-widget "row" "Row to preview (optional)" 0 1000)
+                                       (checkbox-widget "constants" "Render constants (optional)"))))))
