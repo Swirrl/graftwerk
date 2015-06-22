@@ -148,10 +148,6 @@
 
     (evaluate-command sandbox command data-file)))
 
-;;
-;; Items below this line are largely unimplemented...
-;;
-
 (defn find-graft [pipelines-seq name]
   (if-let [graft (first (filter (fn [g]
                                   (and (= :graft (:type g))
@@ -170,30 +166,39 @@
         template-sym (second graft-comp)]
     [pipe-sym template-sym]))
 
-(defn preview-graft-with-row [row
-                              {data-file :tempfile :as data}
-                              graft-command
-                              {:keys [tempfile] :as pipeline}]
+(defn preview-graft-with-row
+  "Returns a grafter.rdf.preview/preview-graph representation of a graft run,
+  when given a row a datafile a graft-command and a pipeline.
+
+  It will find the specified graft-command function in the supplied pipeline
+  code and execute it in a clojail jail and return the results as a readable
+  clojure datastructure."
+  [row
+   {data-file :tempfile :as data}
+   graft-command
+   {:keys [tempfile] :as pipeline}
+   render-constants?]
   (let [graft-sym (symbol graft-command)
         pipeline-forms (read-pipeline pipeline)
         [pipe-sym template-sym] (find-pipe-for-graft pipeline-forms graft-sym)
         data-file (-> data-file .getCanonicalPath)
         sandbox (build-sandbox pipeline-forms data-file)
 
-        executable-code-form `(grafter.rdf.preview/preview-graph ~(list pipe-sym data-file) ~template-sym ~row)]
+        executable-code-form `(grafter.rdf.preview/preview-graph ~(list pipe-sym data-file) ~template-sym ~row ~(if render-constants? :render-constants false))]
 
     (log/info "code form is" executable-code-form)
 
     (sandbox executable-code-form)))
 
 
-;; TODO support this route without pagination
 (defroutes graft-route
-  (POST "/evaluate/graft" {{:keys [pipeline data command row] :as params} :params}
+  (POST "/evaluate/graft" {{:keys [pipeline data command row constants] :as params} :params}
         (if-invalid [errors (validate-graft-run-request params)]
                     {:status 422 :body errors}
                     (if-let [row (and row (Integer/parseInt row))]
-                      {:status 200 :body (preview-graft-with-row row data command pipeline)}
+                      {:status 200 :body (preview-graft-with-row row data command pipeline (if (= "on" constants)
+                                                                                             true
+                                                                                             false))}
                       {:status 200 :body (execute-graft data command pipeline)}))))
 
 (comment
