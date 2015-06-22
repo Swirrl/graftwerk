@@ -25,7 +25,7 @@
                                             move-first-row-to-header _ graph-fn
                                             test-dataset]]
                    [clojure.java.io]
-                   [grafter.rdf.preview :refer [preview-graph]]
+                   [grafter.rdf.preview :refer [preview-graph ->printable-form]]
                    [grafter.rdf :refer [s prefixer]]
                    [grafter.rdf.protocols :refer [->Quad]]
                    [grafter.rdf.templater :refer [graph]]
@@ -137,8 +137,8 @@
         (if-invalid [errors (validate-pipe-run-request params)]
                      {:status 422 :body errors}
                      {:status 200 :body (-> data
-                                           (execute-pipe command pipeline)
-                                           (paginate page-size page))})))
+                                            (execute-pipe command pipeline)
+                                            (paginate page-size page))})))
 
 (defn execute-graft [data command pipeline]
   (let [forms (read-pipeline pipeline)

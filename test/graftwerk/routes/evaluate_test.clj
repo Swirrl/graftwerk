@@ -2,11 +2,23 @@
   (:require [graftwerk.routes.evaluate :refer :all])
   (:require [clojure.test :refer :all]
             [graftwerk.middleware :refer [common-api-middleware]]
+            [graftwerk.middleware.dataset :refer [wrap-write-dataset]]
             [ring.middleware.multipart-params :refer [multipart-params-request]]
             [ring.mock.request :as req]
             [schema.core :as s]
             [grafter.tabular :refer [make-dataset]]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io])
+  (:import [java.util Scanner]))
+
+(defn stream->string
+  "Hack to convert a stream to a string."
+  ;; http://stackoverflow.com/questions/309424/read-convert-an-inputstream-to-a-string
+  [stream]
+  (let [scanner (doto (Scanner. stream)
+                  (.useDelimiter "\\A"))]
+    (if (-> scanner .hasNext)
+      (.next scanner)
+      "")))
 
 (def app:csv "application/csv")
 
@@ -23,13 +35,13 @@
 
 (deftest preview-graft-test
   (is (s/validate preview-response-schema
-                  (preview-graft-with-row 1  (stub-multipart-file "./test/data/example-data.csv") "my-graft" (stub-multipart-file "./test/data/example_pipeline.clj")))))
+                  (preview-graft-with-row 1 (stub-multipart-file "./test/data/example-data.csv") "my-graft" (stub-multipart-file "./test/data/example_pipeline.clj") false))))
 
 
 (deftest stop-hacking-attempts-test
   (is
    (try
-     (preview-graft-with-row 1 (stub-multipart-file "./test/data/example-data.csv") "my-graft" (stub-multipart-file "./test/data/haxor_pipeline.clj"))
+     (preview-graft-with-row 1 (stub-multipart-file "./test/data/example-data.csv") "my-graft" (stub-multipart-file "./test/data/haxor_pipeline.clj") false)
      false
      (catch java.util.concurrent.ExecutionException ex
        (is (instance? java.security.AccessControlException (.getCause ex))
@@ -82,6 +94,25 @@
 
         (is (= 422 (:status response)))))))
 
+(deftest pipe-route-unprintable-test
+  ;; NOTE we mix on the extra wrap-write-dataset middleware here to convert types into UnreadableForms
+  (let [pipe-route (wrap-write-dataset (common-api-middleware pipe-route))]
+    (testing "Unreadable forms get converted into readable UnreadableForm records when previewing pipes as EDN"
+      (let [test-request (-> (req/request :post "/evaluate/pipe")
+                             (add-multipart :pipeline (get-file-request-data "./test/data/non_printable_results.clj" app:edn))
+                             (add-multipart :data (get-file-request-data "./test/data/example-data.csv" app:csv))
+                             (add-multipart :command "my-pipe"))
+
+            {:keys [status body] :as response} (pipe-route test-request)]
+
+        (is (= 200 status))
+        (is (instance? grafter.rdf.preview.UnreadableForm
+                       (->  (stream->string body)
+                            read-string
+                            :rows
+                            first
+                            :sex)))))))
+
 (def quad-schema {:s s/Any :p s/Any :o s/Any :c s/Any})
 
 (deftest graft-route-test
@@ -114,11 +145,4 @@
           (is (= 200 status)
               "Returns 200 ok")
           (is (s/validate preview-response-schema body)
-              "Returns a datastructure containing the template preview, bindings, etc...")))
-
-      (testing "with invalid parameters"
-
-        )
-      )
-    )
-  )
+              "Returns a datastructure containing the template preview, bindings, etc..."))))))

@@ -4,6 +4,7 @@
             [grafter.rdf :refer [s]]
             [grafter.rdf.formats :refer :all]
             [grafter.rdf.io :refer [rdf-serializer]]
+            [grafter.rdf.preview :refer [->printable-form]]
             [ring.middleware.format-response :refer [parse-accept-header]]
             [clojure.java.io :refer [output-stream]]
             [ring.util.mime-type :refer [default-mime-types]]
@@ -22,7 +23,8 @@
     ~@body))
 
 (defn stream-edn [output dataset]
-  (let [rows (:rows dataset)
+  (let [dataset (->printable-form dataset)
+        rows (:rows dataset)
         cols (:column-names dataset)]
     (with-out-stream output
       (prn {:column-names cols :rows rows}))))
