@@ -21,7 +21,7 @@
                     [rdf:a foaf:Person]
                     [foaf:gender sex]
                     [foaf:age age]
-                    [foaf:name (s name)]])))
+                    [foaf:name name]])))
 
 (defpipe my-pipe
   "Pipeline to convert tabular persons data into a different tabular format."
@@ -32,8 +32,8 @@
       (derive-column :person-uri [:name] base-id)
       (mapc {:age ->integer
              :sex {"f" (s "female")
-                   "m" (s "male")}})))
-
+                   "m" (s "male")
+                   }})))
 
 (defgraft my-graft
   "Pipeline to convert the tabular persons data sheet into graph data."

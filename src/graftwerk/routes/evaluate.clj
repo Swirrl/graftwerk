@@ -3,12 +3,13 @@
             [clojure.stacktrace :refer [root-cause]]
             [clojure.java.io :as io]
             [grafter.tabular :refer [make-dataset dataset?]]
-            [clojail.core :refer [sandbox safe-read]]
+            [clojail.core :refer [sandbox safe-read eagerly-consume]]
             [clojail.jvm :refer [permissions domain context]]
             [taoensso.timbre :as log]
-            [clojail.testers :refer [secure-tester-without-def]]
+            [clojail.testers :refer [secure-tester-without-def blanket blacklist-objects blacklist-packages blacklist-symbols blacklist-nses]]
             [graftwerk.validations :refer [if-invalid valid? validate-pipe-run-request validate-graft-run-request]]
-            [grafter.pipeline :as pl])
+            [grafter.pipeline :as pl]
+            [taoensso.timbre :as log])
   (:import [java.io FilePermission]
            (clojure.lang LispReader$ReaderException)))
 
@@ -18,10 +19,12 @@
 (defn namespace-declaration []
   (let [requires '(:require
                    [grafter.tabular :refer [defpipe defgraft column-names columns rows
-                                            all-columns derive-column mapc swap drop-rows
+                                            derive-column mapc swap drop-rows
                                             read-dataset read-datasets make-dataset
                                             move-first-row-to-header _ graph-fn
                                             test-dataset]]
+                   [clojure.java.io]
+                   [grafter.rdf.preview :refer [preview-graph]]
                    [grafter.rdf :refer [s prefixer]]
                    [grafter.rdf.protocols :refer [->Quad]]
                    [grafter.rdf.templater :refer [graph]]
@@ -33,11 +36,32 @@
 (defn namespace-qualify [command]
   (symbol (str default-namespace "/" command)))
 
+(def ^{:doc "A tester that attempts to be secure, and allows def."}
+  modifed-secure-tester-without-def
+  [(blacklist-objects [clojure.lang.Compiler clojure.lang.Ref clojure.lang.Reflector
+                       clojure.lang.Namespace clojure.lang.Var clojure.lang.RT
+                       java.io.ObjectInputStream])
+   (blacklist-packages ["java.lang.reflect"
+                        "java.security"
+                        "java.util.concurrent"
+                        "java.awt"])
+   (blacklist-symbols
+    '#{alter-var-root intern eval catch *read-eval*
+       load-string load-reader addMethod ns-resolve resolve find-var
+       ns-publics ns-unmap set! ns-map ns-interns the-ns
+       push-thread-bindings
+       pop-thread-bindings
+       future-call agent send
+       send-off pmap pcalls pvals in-ns System/out System/in System/err
+       with-redefs-fn Class/forName})
+   (blacklist-nses '[clojure.main])
+   (blanket "clojail")])
+
 (defn build-sandbox
   "Build a clojailed sandbox configured for Grafter pipelines.  Takes
   a parsed sexp containing the grafter pipeline file."
-  [pipeline-sexp data]
-  (let [context (-> (FilePermission. data "read")
+  [pipeline-sexp file-path]
+  (let [context (-> (FilePermission. file-path "read")
                     permissions
                     domain
                     context)
@@ -46,7 +70,9 @@
                     :init (namespace-declaration)
                     :namespace  default-namespace
                     :context context
+                    :transform eagerly-consume
                     :max-defs 500)]
+    (log/log-env :info "build-sandbox")
     (sb pipeline-sexp)
     sb))
 
@@ -75,7 +101,12 @@
                               page-size page-number)
                 (:column-names ds)))
 
-(defn read-pipeline [pipeline]
+(defn read-pipeline
+  "Takes a ring style multi-part form map that contains a file reference to
+  a :tempfile, reads the s-expressions out of the file and returns it wrapped in
+  a '(do ...) for evaluation."
+  [pipeline]
+
   (let [code (-> pipeline :tempfile slurp)]
 
     ;; FUGLY hack beware!!!
@@ -116,37 +147,56 @@
 
     (evaluate-command sandbox command data-file)))
 
-;; TODO support this route without pagination
-(defroutes graft-route
-  (POST "/evaluate/graft" {{:keys [pipeline data command] :as params} :params}
-        (if-invalid [errors (validate-graft-run-request params)]
-                    {:status 422 :body errors}
-                    {:status 200 :body (execute-graft data command pipeline)})))
-
 ;;
 ;; Items below this line are largely unimplemented...
 ;;
 
-(defn find-graft [name forms]
+(defn find-graft [pipelines-seq name]
   (if-let [graft (first (filter (fn [g]
-                             (when (and (= :graft (:type g))
-                                        (= :name (:name g)))
-                               g))
-                                (pl/find-pipelines forms default-namespace {})))]
+                                  (and (= :graft (:type g))
+                                       (= name (:name g))))
+                                pipelines-seq))]
     graft
-    (throw (RuntimeException. "Could not find graft" name))))
+    (throw (RuntimeException. (str "Could not find graft " name)))))
+
+(defn find-pipe-for-graft [pipeline-forms graft-command]
+  (let [graft-command (symbol graft-command)
+        graft-comp (-> pipeline-forms
+                       (pl/find-pipelines default-namespace {})
+                       (find-graft graft-command)
+                       :body)
+        pipe-sym (last graft-comp) ;; find pipe-command its the last '(comp .. .. pipe-command)]
+        template-sym (second graft-comp)]
+    [pipe-sym template-sym]))
+
+(defn preview-graft-with-row [row
+                              {data-file :tempfile :as data}
+                              graft-command
+                              {:keys [tempfile] :as pipeline}]
+  (let [graft-sym (symbol graft-command)
+        pipeline-forms (read-pipeline pipeline)
+        [pipe-sym template-sym] (find-pipe-for-graft pipeline-forms graft-sym)
+        data-file (-> data-file .getCanonicalPath)
+        sandbox (build-sandbox pipeline-forms data-file)
+
+        executable-code-form `(grafter.rdf.preview/preview-graph ~(list pipe-sym data-file) ~template-sym ~row)]
+
+    (log/info "code form is" executable-code-form)
+
+    (sandbox executable-code-form)))
 
 
-(comment ;; TODO
-  (defn execute-graft-with-row [row data command pipeline]
-    (let [forms (read-pipeline pipeline)
-          command (symbol command)
-          pipe-command (-> forms
-                           (pl/find-pipelines default-namespace {})
-                           (find-graft command)
-                           :body
-                           last)
-          ds (-> data
-                 (execute-pipe pipe-command pipeline))]
-      ;; TODO
-      )))
+;; TODO support this route without pagination
+(defroutes graft-route
+  (POST "/evaluate/graft" {{:keys [pipeline data command row] :as params} :params}
+        (if-invalid [errors (validate-graft-run-request params)]
+                    {:status 422 :body errors}
+                    (if row
+                      {:status 200 :body (preview-graft-with-row row data command pipeline)}
+                      {:status 200 :body (execute-graft data command pipeline)}))))
+
+(comment
+
+  (execute-graft-with-row 1 "/Users/rick/repos/grafter-template/resources/leiningen/new/grafter/example-data.csv" "my-graft" {:tempfile (clojure.java.io/file "/Users/rick/repos/graftwerk/test/data/example_pipeline.clj")})
+
+)

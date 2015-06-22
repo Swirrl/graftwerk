@@ -43,6 +43,7 @@
 (defn validate-graft-run-request [params]
   (b/validate params
               :command v/required
+              :row empty-or-number
               ;;[:pipeline :content-type] clojure-content
               ;;[:data :content-type] tabular-file
               [:pipeline :filename] v/required

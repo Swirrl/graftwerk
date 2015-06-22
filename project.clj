@@ -9,7 +9,7 @@
                  [com.taoensso/tower "3.0.2"]
                  [selmer "0.8.0"]
                  [enlive "1.1.5"]
-                 [grafter "0.4.0"]
+                 [grafter "0.5.0-SNAPSHOT"]
                  [clojail "1.0.6"]
                  [environ "1.0.0"]
                  [compojure "1.3.2"]
@@ -27,7 +27,7 @@
   :repl-options {:init-ns graftwerk.core
                  :init (-main)}
 
-  :jvm-opts ["-server"]
+  :jvm-opts ["-server" "-Djava.security.manager" "-Djava.security.policy=/Users/rick/.java.policy"]
 
   :main graftwerk.core
 
@@ -51,6 +51,7 @@
                        :stacktraces?  false
                        :auto-reload?  false}}
    :dev {:dependencies [[ring-mock "0.1.5"]
+                        [prismatic/schema "0.4.3"]
                         [ring/ring-devel "1.3.2"]
                         [pjstadig/humane-test-output "0.6.0"]]
 

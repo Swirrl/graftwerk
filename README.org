@@ -1,7 +1,6 @@
 #+TITLE: Graftwerk :: Pipeline Runner API Docs
 
 * Getting Started
-
 ** Running the Graftwerk Server
 
 Graftwerk uses clojail and Java SecurityManagers to sandbox the
@@ -152,14 +151,19 @@ The following response codes may be returned on requests:
 |         422 | Unprocessable Entity   | The data is understood, but still invalid.  The response object may contain more information.              |
 |         500 | Server Error           | An error occured.  An error object may be returned in the response.                                        |
 
-** Evaluating a Pipeline as a pipe
+** Running pipes and grafts on the whole dataset
 
-| Route            | Method |
-|------------------+--------|
-| =/evaluate/pipe= | =POST= |
+| Route             | Method |
+|-------------------+--------|
+| =/evaluate/pipe=  | =POST= |
+| =/evaluate/graft= | =POST= |
 
-Sending a =POST= request to =/pipe/evaluate= will evaluate the
-pipeline returning the result based upon the accept header.
+Sending a =POST= request to =/evaluate/pipe= or =/evaluate/graft= will evaluate
+the pipeline returning the result based upon the accept header.
+
+Both routes have the same required inputs, but differ in that pipes generate
+tabular outputs and grafts generate graph outputs.  Graft routes do not support
+pagination,
 
 *** Required Parameters
 
@@ -210,27 +214,142 @@ It =SHALL= support the following response formats:
 | pipe       | text/csv              |
 | graft      | application/n-triples |
 
-** Pagination Parameters
+** Previews
 
-/NOTE:/ Pagination is not supported yet on the graft route, currently
-graft runs return only all of the results as n-triples.  We will add
-support for specifying a portion of this output for previews.
+Previews are currently only available on =pipe= routes, with =graft= preview
+support coming in a subsequent version.  Previewing essentially amounts to
+specifying a subset of the input to transform, with results returned in the
+requested format.
 
-If no page number is supplied then the pipeline will return the
-results of the whole pipeline execution in the specified format.
+Applications are usually best requesting preview responses in the
+=application/edn= format, as this format supports all of the native grafter
+types, which is necessary for reliable end user debugging.
 
-If however the interface wishes to render a preview of the
-transformation on a page of data it can request just these results
+*** Previewing Pipes
 
-The route supports the following optional parameters:
+You can generate a tabular preview of a =pipe= transformation by calling the
+standard =/evaluate/pipe= route with the following optional parameters to
+specify a page of data to transform and return:
 
-| Parameter   | Type    | Action                                                          |
+| Parameter   | Type    | Description                                                     |
 |-------------+---------+-----------------------------------------------------------------|
 | =page=      | Integer | Requests the page number =page=.  Assuming =page-size= results. |
-| =page-size= | Integer | Page must be specified                                          |
+| =page-size= | Integer | The number of results per page.  Defaults to =50=               |
 
-Pages start at page =0=, and there is a default page size of =50=
-results.
+If no =page= number is supplied then the pipeline will return the results of the
+whole pipeline execution in the specified format.
+
+Pages start at page =0=, and there is a default page size of =50= results.
+
+Previews are available in all supported tabular formats; however
+=application/edn= should be preferred for debug interfaces.
+
+*** TODO Previewing Grafts
+
+/NOTE:/ Previewing is not supported yet on the graft route, currently graft runs
+return only all of the results as n-triples.  This section describes
+functionality that is being developed.
+
+You can generate a preview of a =graft= transformation by calling the standard
+=/evaluate/graft= route with the optional =row= attribute set.
+
+| Parameter | Type    | Description                                             |
+|-----------+---------+---------------------------------------------------------|
+| =row=     | Integer | Generates a graph preview of the specified =row= number |
+
+Clients should always request Graft previews in =application/edn= format by
+setting the =Accept= header.
+
+Graft previews inspect the =command= parameter and find the specified graft
+commands =graph-fn= template.  The specified =row= is then transformed via the
+grafts pipe and the data injected into the =graph-fn= template.  Graftwerk
+finally returns a datastructure containing the body of the graph-fn template
+with the column variables substituted for the pipe transformed data.  The
+returned datastructure also contains additional data which may be useful for
+debugging.  This includes the transformed row, and bindings specified in the
+=graph-fn='s arguments list.
+
+For example given the following =graph-fn=
+
+#+BEGIN_SRC clojure
+(def my-graph-template (graph-fn [{:strs [persons-graph-uri person-uri person-name person-age friend-uri friend-name friend-age]}]
+                          (graph persons-graph-uri
+                             [person-uri
+                                [rdf:a foaf:Person]
+                                [foaf:name person-name]
+                                [foaf:age  person-age]
+                                [foaf:knows friend-uri]]
+                             [friend-uri
+                                [rdf:a foaf:Person]
+                                [foaf:name friend-name]
+                                [foaf:age  friend-age]
+                                [foaf:knows person-uri]])))
+#+END_SRC
+
+And the following data (once its been transformed by the grafts pipe):
+
+| persons-graph-uri | person-uri     | person-name | person-age | friend-uri    | friend-name | friend-age |
+|-------------------+----------------+-------------+------------+---------------+-------------+------------|
+| http://graph/     | http://tarzan/ | Tarzan      |         28 | http://jane/  | Jane        |         25 |
+| http://graph/     | http://bob/    | Bob         |         35 | http://alice/ | Alice       |         30 |
+
+Then a request to the =graft= route for =row= =1= with an =Accept= header of
+=application/edn= would return:
+
+#+BEGIN_SRC clojure
+{:bindings
+ {:strs
+  [persons-graph-uri
+   person-uri
+   person-name
+   person-age
+   friend-uri
+   friend-name
+   friend-age]},
+ :row
+ {"friend-age" 30,
+  "friend-name" "Alice",
+  "friend-uri" "http://alice/",
+  "person-age" 35,
+  "person-name" "Bob",
+  "person-uri" "http://bob/",
+  "persons-graph-uri" "http://graph/"},
+ :template
+ ((graph
+   "http://graph/"
+   ["http://bob/"
+    [rdf:a foaf:Person]
+    [foaf:name "Bob"]
+    [foaf:age 35]
+    [foaf:knows "http://alice/"]]
+   ["http://alice/"
+    [rdf:a foaf:Person]
+    [foaf:name "Alice"]
+    [foaf:age 30]
+    [foaf:knows "http://bob/"]]))}
+#+END_SRC
+
+The most important piece of the response is the =:template= which is the body of
+the =graph-fn= function with all the column variables substituted for the
+transformed values in the =Dataset=.  The =:row= key contains a the transformed
+data found on the specified row which was use to populate the template, whilst
+=:bindings= contains the bindings specified for the =graph-fn= function.  Most
+of the time users will only be concerned with the context found in a =row=, but
+there is a potential for error in the specification of the bindings by the user,
+and those in the data; so in order to help a user debug in this case we provide
+both.
+
+Note also that currently Graftwerk only expands data that has come from the
+Dataset, other symbols are currently left untouched; however in the future we
+may support previewing the values of these too.
+
+Successful previews will return with an HTTP =200= response code.
+
+Some errors can prevent the rendering of the template altogether; when this
+happens the route will return a =500= response with an error object, containing
+a stacktrace and any other information.  However if the template renders, it may
+still contain error objects will be reflected in the appropriate position in the
+template.
 
 ** Response Objects
 
