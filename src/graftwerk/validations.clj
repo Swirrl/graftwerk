@@ -14,8 +14,9 @@
 (v/defvalidator empty-or-number {:optional true} [i]
   (cond
     (nil? i) true
-    (number? i) true
     (= "" i) true
+    (number? i) true
+    (try->integer i) true
     :else false))
 
 (v/defvalidator clojure-content
