@@ -37,10 +37,10 @@
 
 (def app
   (-> (routes
-       pipe-route
-       graft-route
-       page-routes
-       base-routes)
+       #'pipe-route
+       #'graft-route
+       #'page-routes
+       #'base-routes)
       common-api-middleware
       development-middleware
       production-middleware))
