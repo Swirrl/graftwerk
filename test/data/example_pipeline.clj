@@ -33,7 +33,8 @@
       (mapc {:age ->integer
              :sex {"f" (s "female")
                    "m" (s "male")
-                   }})))
+                   }
+             :name s})))
 
 (defgraft my-graft
   "Pipeline to convert the tabular persons data sheet into graph data."
