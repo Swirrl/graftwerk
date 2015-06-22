@@ -7,15 +7,16 @@
     (try
       (f v)
       (catch Exception ex
-        v))))
+        false))))
 
-(def try->integer (try-convert #(Integer/parseInt %)))
+(def try->integer (try-convert (fn [i]
+                                 (cond
+                                   (number? i) i
+                                   (string? i) (Integer/parseInt i)))))
 
 (v/defvalidator empty-or-number {:optional true} [i]
   (cond
-    (nil? i) true
     (= "" i) true
-    (number? i) true
     (try->integer i) true
     :else false))
 

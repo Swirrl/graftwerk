@@ -192,8 +192,8 @@
   (POST "/evaluate/graft" {{:keys [pipeline data command row] :as params} :params}
         (if-invalid [errors (validate-graft-run-request params)]
                     {:status 422 :body errors}
-                    (if-not (empty? row)
-                      {:status 200 :body (preview-graft-with-row (Integer/parseInt (trim row)) data command pipeline)}
+                    (if-let [row (and row (Integer/parseInt row))]
+                      {:status 200 :body (preview-graft-with-row row data command pipeline)}
                       {:status 200 :body (execute-graft data command pipeline)}))))
 
 (comment

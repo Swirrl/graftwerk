@@ -107,7 +107,7 @@
     (let [graft-route (common-api-middleware graft-route)]
       (testing "with valid parameters"
         (let [test-request (-> (evaluate-request "/evaluate/graft" "my-graft")
-                               (add-param :row 0))
+                               (add-param :row "0"))
 
               {:keys [status body] :as response} (graft-route test-request)]
 
