@@ -40,27 +40,27 @@
   [:p] (en/content advice))
 
 (en/defsnippet form-widget html-template [:#contents :form]
-  [{:keys [destination command-text placeholder]}]
+  [{:keys [destination command-text placeholder]} & more-contents]
   [:form] (en/do->
            (en/set-attr :action destination)
-           (en/content
-            (upload-widget "pipeline"
-                           :description "The pipeline specifying the transformation"
-                           :advice "A Grafter transformation")
-            (upload-widget "data"
-                           :description "The data you wish to transform"
-                           :advice "CSV or Excel formats supported")
-            (text-widget "command" command-text placeholder)
-            (numeric-widget "page" "Page number" 0 1000)
-            (numeric-widget "page-size" "Page size" 0 1000)
-            (submit-widget "Transform"))))
+           (apply en/content
+                  (upload-widget "pipeline"
+                                 :description "The pipeline specifying the transformation"
+                                 :advice "A Grafter transformation")
+                  (upload-widget "data"
+                                 :description "The data you wish to transform"
+                                 :advice "CSV or Excel formats supported")
+                  (text-widget "command" command-text placeholder)
+
+                  (concat more-contents
+                          [(submit-widget "Transform")]))))
 
 (en/deftemplate form-page html-template
-  [{:keys [title description form]}]
+  [{:keys [title description]} form]
   [:html :title] (en/content "Graftwerk")
   [:#contents :h2] (en/content title)
   [:#contents :section :p] (en/content description)
-  [:#contents :form] (en/substitute (form-widget form))
+  [:#contents :form] (en/substitute form)
   [:footer :.rhs :img] (en/set-attr :src
                                     "/images/swirrl_r.png")
   [:footer :.lhs :p] (en/html-content "&copy; 2015 Swirrl IT Limited."))
@@ -71,13 +71,18 @@
 (defroutes page-routes
   (GET "/pipe" []
        (render (form-page {:title "Run a pipe"
-                           :description "Upload a pipeline containing a grafter pipe and the tabular file you wish to transform"
-                           :form {:destination "/evaluate/pipe"
-                                  :command-text "Pipe to execute"
-                                  :placeholder "my-pipe"}})))
+                           :description "Upload a pipeline containing a grafter pipe and the tabular file you wish to transform"}
+
+                          (form-widget {:destination "/evaluate/pipe"
+                                        :command-text "Pipe to execute"
+                                        :placeholder "my-pipe"}
+                                       (numeric-widget "page" "Page number (optional)" 0 1000)
+                                       (numeric-widget "page-size" "Page size (optional)" 0 1000)))))
   (GET "/graft" []
        (render (form-page {:title "Run a graft"
-                           :description "Upload a pipeline containing a grafter graft and the tabular file you wish to transform"
-                           :form {:destination "/evaluate/graft"
-                                  :command-text "Graft to execute"
-                                  :placeholder "my-graft"}}))))
+                           :description "Upload a pipeline containing a grafter graft and the tabular file you wish to transform"}
+
+                          (form-widget {:destination "/evaluate/graft"
+                                        :command-text "Graft to execute"
+                                        :placeholder "my-graft"}
+                                       (numeric-widget "row" "Row to preview (optional)" 0 1000))))))
