@@ -5,6 +5,7 @@
   (:gen-class))
 
 (defn -main [& args]
-  (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))]
+  (let [port (Integer/parseInt (or (System/getenv "PORT") "3000"))
+        host (or (System/getenv "HOST") "0.0.0.0")]
     (log/info "Graftwerk started visit" (str "http://localhost:" port "/"))
-    (run-jetty #'app {:port port :join? false})))
+    (run-jetty #'app {:port port :host host :join? false})))
