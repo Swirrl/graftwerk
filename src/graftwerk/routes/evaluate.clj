@@ -16,21 +16,23 @@
 
 (def default-namespace 'graftwerk.pipeline)
 
+(def default-requires
+  '(:require [grafter.tabular :refer :all]
+             [clojure.string]
+             [grafter.rdf :refer [prefixer]]
+             [grafter.rdf.templater :refer [graph]]
+             [grafter.vocabularies.rdf :refer :all]
+             [grafter.vocabularies.qb :refer :all]
+             [grafter.vocabularies.sdmx-measure :refer :all]
+             [grafter.vocabularies.sdmx-attribute :refer :all]
+             [grafter.vocabularies.skos :refer :all]
+             [grafter.vocabularies.dcterms :refer :all]))
+
 ;; TODO load this declaration from a file editable by the devops team.
 (defn namespace-declaration []
-  (let [requires '(:require
-                   [grafter.tabular :refer [defpipe defgraft column-names columns rows
-                                            derive-column mapc swap drop-rows
-                                            read-dataset read-datasets make-dataset
-                                            move-first-row-to-header _ graph-fn
-                                            test-dataset]]
-                   [clojure.java.io]
-                   [grafter.rdf.preview :refer [preview-graph ->printable-form]]
-                   [grafter.rdf :refer [s prefixer]]
-                   [grafter.rdf.protocols :refer [->Quad]]
-                   [grafter.rdf.templater :refer [graph]]
-                   [grafter.vocabularies.rdf :refer :all]
-                   [grafter.vocabularies.foaf :refer :all])]
+  (let [requires (try (read-string (slurp "requires.edn"))
+                      (catch java.io.FileNotFoundException ex
+                        default-requires))]
     `(ns ~default-namespace
        ~requires)))
 
