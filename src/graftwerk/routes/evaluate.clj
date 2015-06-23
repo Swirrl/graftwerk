@@ -1,6 +1,7 @@
 (ns graftwerk.routes.evaluate
   (:require [compojure.core :refer [defroutes POST]]
             [clojure.stacktrace :refer [root-cause]]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :refer [trim]]
             [grafter.tabular :refer [make-dataset dataset?]]
@@ -14,30 +15,33 @@
   (:import [java.io FilePermission]
            (clojure.lang LispReader$ReaderException)))
 
-(def default-namespace 'graftwerk.pipeline)
+(def default-namespace-declaration
+  '(ns graftwerk.pipeline
+     (:require [grafter.tabular :refer :all]
+               [clojure.string]
+               [grafter.rdf :refer [prefixer]]
+               [grafter.rdf.templater :refer [graph]]
+               [grafter.vocabularies.rdf :refer :all]
+               [grafter.vocabularies.qb :refer :all]
+               [grafter.vocabularies.sdmx-measure :refer :all]
+               [grafter.vocabularies.sdmx-attribute :refer :all]
+               [grafter.vocabularies.skos :refer :all]
+               [grafter.vocabularies.dcterms :refer :all])))
 
-(def default-requires
-  '(:require [grafter.tabular :refer :all]
-             [clojure.string]
-             [grafter.rdf :refer [prefixer]]
-             [grafter.rdf.templater :refer [graph]]
-             [grafter.vocabularies.rdf :refer :all]
-             [grafter.vocabularies.qb :refer :all]
-             [grafter.vocabularies.sdmx-measure :refer :all]
-             [grafter.vocabularies.sdmx-attribute :refer :all]
-             [grafter.vocabularies.skos :refer :all]
-             [grafter.vocabularies.dcterms :refer :all]))
+(defn namespace-symbol
+  "Return the namespace name for the supplied namespace form"
+  [ns-form]
+  (second ns-form))
 
 ;; TODO load this declaration from a file editable by the devops team.
 (defn namespace-declaration []
-  (let [requires (try (read-string (slurp "requires.edn"))
+  (let [requires (try (edn/read-string (slurp "namespace.edn"))
                       (catch java.io.FileNotFoundException ex
-                        default-requires))]
-    `(ns ~default-namespace
-       ~requires)))
+                        default-namespace-declaration))]
+    requires))
 
-(defn namespace-qualify [command]
-  (symbol (str default-namespace "/" command)))
+(defn namespace-qualify [namespace-name-sym command]
+  (symbol (str namespace-name-sym "/" command)))
 
 (def ^{:doc "A tester that attempts to be secure, and allows def."}
   modifed-secure-tester-without-def
@@ -68,10 +72,10 @@
                     permissions
                     domain
                     context)
-
+        namespace-form (namespace-declaration)
         sb (sandbox secure-tester-without-def
-                    :init (namespace-declaration)
-                    :namespace  default-namespace
+                    :init namespace-form
+                    :namespace (namespace-symbol namespace-form)
                     :context context
                     :transform eagerly-consume
                     :max-defs 500)]
@@ -160,8 +164,9 @@
 
 (defn find-pipe-for-graft [pipeline-forms graft-command]
   (let [graft-command (symbol graft-command)
+        namespace-name (namespace-symbol (namespace-declaration))
         graft-comp (-> pipeline-forms
-                       (pl/find-pipelines default-namespace {})
+                       (pl/find-pipelines namespace-name {})
                        (find-graft graft-command)
                        :body)
         pipe-sym (last graft-comp) ;; find pipe-command its the last '(comp .. .. pipe-command)]

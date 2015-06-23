@@ -104,25 +104,24 @@ Lets look at the pipeline code:
   my-pipe make-graph)
 #+END_SRC
 
-The important thing to notice is that for security reasons it doesn't
-include a namespace defintion.  Thats because this is set by the
-server.  Currently this is hardcoded in the server, but will be
-configurable (server side) in the future.  This is the default context
-that pipelines execute in:
+The important thing to notice is that for security reasons it doesn't include a
+namespace defintion.  Thats because this is set by the server.  The namespace
+requires you wish to use can be configured by specifying them in the
+=namespace.edn= file.
 
 #+BEGIN_SRC clojure
-  (ns graftwerk.pipele
-    (:require
-     [grafter.tabular :refer [defpipe defgraft column-names columns rows
-                              all-columns derive-column mapc swap drop-rows
-                              read-dataset read-datasets make-dataset
-                              move-first-row-to-header _ graph-fn
-                              test-dataset]]
-     [grafter.rdf :refer [s prefixer]]
-     [grafter.rdf.protocols :refer [->Quad]]
-     [grafter.rdf.templater :refer [graph]]
-     [grafter.vocabularies.rdf :refer :all]
-     [grafter.vocabularies.foaf :refer :all]))
+(:require [grafter.tabular :refer :all]
+          [clojure.string]
+          [grafter.rdf.io :refer [s]]
+          [grafter.rdf :refer [prefixer]]
+          [grafter.tabular.melt :refer [melt]]
+          [grafter.rdf.templater :refer [graph]]
+          [grafter.vocabularies.rdf :refer :all]
+          [grafter.vocabularies.qb :refer :all]
+          [grafter.vocabularies.sdmx-measure :refer :all]
+          [grafter.vocabularies.sdmx-attribute :refer :all]
+          [grafter.vocabularies.skos :refer :all]
+          [grafter.vocabularies.dcterms :refer :all])
 #+END_SRC
 
 ** Running Pipes
@@ -244,7 +243,7 @@ Pages start at page =0=, and there is a default page size of =50= results.
 Previews are available in all supported tabular formats; however
 =application/edn= should be preferred for debug interfaces.
 
-*** TODO Previewing Grafts
+*** Previewing Grafts
 
 /NOTE:/ Previewing is not supported yet on the graft route, currently graft runs
 return only all of the results as n-triples.  This section describes
