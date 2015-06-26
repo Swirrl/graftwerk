@@ -44,9 +44,9 @@
   (symbol (str namespace-name-sym "/" command)))
 
 (def ^{:doc "A tester that attempts to be secure, and allows def."}
-  modifed-secure-tester-without-def
+  modified-secure-tester-without-def
   [(blacklist-objects [clojure.lang.Compiler clojure.lang.Ref clojure.lang.Reflector
-                       clojure.lang.Namespace clojure.lang.Var clojure.lang.RT
+                       clojure.lang.Namespace clojure.lang.RT ;;  clojure.lang.Var
                        java.io.ObjectInputStream])
    (blacklist-packages ["java.lang.reflect"
                         "java.security"
@@ -73,11 +73,12 @@
                     domain
                     context)
         namespace-form (namespace-declaration)
-        sb (sandbox secure-tester-without-def
+        sb (sandbox modified-secure-tester-without-def
                     :init namespace-form
                     :namespace (namespace-symbol namespace-form)
                     :context context
                     :transform eagerly-consume
+                    :timeout 20000
                     :max-defs 500)]
     (log/log-env :info "build-sandbox")
     (sb pipeline-sexp)
