@@ -25,7 +25,8 @@
   :uberjar-name "graftwerk.jar"
 
   :repl-options {:init-ns graftwerk.core
-                 :init (-main)}
+                 :init (-main)
+                 :timeout 60000}
 
   :jvm-opts ["-server" "-Djava.security.manager" "-Djava.security.policy=/Users/rick/.java.policy"]
 
