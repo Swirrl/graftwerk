@@ -1,9 +1,10 @@
 (ns graftwerk.routes.evaluate
   (:require [compojure.core :refer [defroutes POST]]
             [clojure.stacktrace :refer [root-cause]]
+            [clojure.pprint :refer [pprint]]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :refer [trim]]
+            [clojure.string :refer [trim blank?]]
             [grafter.tabular :refer [make-dataset dataset?]]
             [clojail.core :refer [sandbox safe-read eagerly-consume]]
             [clojail.jvm :refer [permissions domain context]]
@@ -84,8 +85,18 @@
     (sb pipeline-sexp)
     sb))
 
-(defn evaluate-command [sandbox command data]
-  (let [apply-pipe (list command data)]
+(defn read-dataset-with-filename-meta
+  "Returns an sexp that opens a dataset with read-dataset and sets the supplied
+  filename as metadata.
+
+  Useful as ring bodges the filename with a tempfile otherwise."
+  [data-file filename]
+  `(with-meta
+     (grafter.tabular/read-dataset ~data-file :format :csv)
+     {:grafter.tabular/data-source ~filename}))
+
+(defn evaluate-command [sandbox command data filename]
+  (let [apply-pipe (list command (read-dataset-with-filename-meta data filename))]
     (log/info "About to apply pipe in sandbox" apply-pipe)
     (sandbox apply-pipe)))
 
@@ -128,32 +139,24 @@
                     code
                     ")"))))
 
-(defn execute-pipe
+(defn execute-pipeline [data command pipeline]
   "Takes the data to operate on (a ring file map) a command (a
   function name for a pipe or graft) and a pipeline clojure file and
   returns a Grafter dataset."
-  [data command pipeline]
-  (let [command (symbol command)
-        transformation (read-pipeline pipeline)
+  (let [forms (read-pipeline pipeline)
+        command (symbol command)
         data-file (-> data :tempfile .getPath)
-        sandbox (build-sandbox transformation data-file)]
-    (evaluate-command sandbox command data-file)))
+        sandbox (build-sandbox forms data-file)]
+
+    (evaluate-command sandbox command data-file (:filename data))))
 
 (defroutes pipe-route
   (POST "/evaluate/pipe" {{:keys [pipeline data page-size page command] :as params} :params}
         (if-invalid [errors (validate-pipe-run-request params)]
                      {:status 422 :body errors}
                      {:status 200 :body (-> data
-                                            (execute-pipe command pipeline)
+                                            (execute-pipeline command pipeline)
                                             (paginate page-size page))})))
-
-(defn execute-graft [data command pipeline]
-  (let [forms (read-pipeline pipeline)
-        command (symbol command)
-        data-file (-> data :tempfile .getPath)
-        sandbox (build-sandbox forms data-file)]
-
-    (evaluate-command sandbox command data-file)))
 
 (defn find-graft [pipelines-seq name]
   (if-let [graft (first (filter (fn [g]
@@ -174,6 +177,7 @@
         template-sym (second graft-comp)]
     [pipe-sym template-sym]))
 
+
 (defn preview-graft-with-row
   "Returns a grafter.rdf.preview/preview-graph representation of a graft run,
   when given a row a datafile a graft-command and a pipeline.
@@ -182,7 +186,7 @@
   code and execute it in a clojail jail and return the results as a readable
   clojure datastructure."
   [row
-   {data-file :tempfile :as data}
+   {:keys [filename] data-file :tempfile :as data}
    graft-command
    {:keys [tempfile] :as pipeline}
    render-constants?]
@@ -192,7 +196,8 @@
         data-file (-> data-file .getCanonicalPath)
         sandbox (build-sandbox pipeline-forms data-file)
 
-        executable-code-form `(grafter.rdf.preview/preview-graph ~(list pipe-sym data-file) ~template-sym ~row ~(if render-constants? :render-constants false))]
+        executable-code-form `(let [ds# ~(read-dataset-with-filename-meta data-file filename)]
+                                (grafter.rdf.preview/preview-graph (~pipe-sym ds#) ~template-sym ~row ~(if render-constants? :render-constants false)))]
 
     (log/info "code form is" executable-code-form)
 
@@ -203,14 +208,14 @@
   (POST "/evaluate/graft" {{:keys [pipeline data command row constants] :as params} :params}
         (if-invalid [errors (validate-graft-run-request params)]
                     {:status 422 :body errors}
-                    (if-let [row (and row (Integer/parseInt row))]
+                    (if-let [row (and (not (blank? row)) (Integer/parseInt row))]
                       {:status 200 :body (preview-graft-with-row row data command pipeline (if (= "on" constants)
                                                                                              true
                                                                                              false))}
-                      {:status 200 :body (execute-graft data command pipeline)}))))
+                      {:status 200 :body (execute-pipeline data command pipeline)}))))
 
 (comment
 
-  (execute-graft-with-row 1 "/Users/rick/repos/grafter-template/resources/leiningen/new/grafter/example-data.csv" "my-graft" {:tempfile (clojure.java.io/file "/Users/rick/repos/graftwerk/test/data/example_pipeline.clj")})
+  (preview-graft-with-row 1 "/Users/rick/repos/grafter-template/resources/leiningen/new/grafter/example-data.csv" "my-graft" {:tempfile (clojure.java.io/file "/Users/rick/repos/graftwerk/test/data/example_pipeline.clj")} false)
 
 )

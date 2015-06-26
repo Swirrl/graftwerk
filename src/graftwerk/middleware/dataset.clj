@@ -2,6 +2,7 @@
   (:require [grafter.tabular :refer [make-dataset dataset? write-dataset]]
             [grafter.tabular.common :refer [write-dataset* dataset->seq-of-seqs]]
             [grafter.rdf :refer [s]]
+            [clojure.pprint :refer [pprint]]
             [grafter.rdf.formats :refer :all]
             [grafter.rdf.io :refer [rdf-serializer]]
             [grafter.rdf.preview :refer [->printable-form]]
@@ -118,12 +119,15 @@
                                 (assoc-in [:headers "Content-Disposition"] "attachment; filename=\"results\"")))
 
           (map? body) (do
-                        (log/warn "Validation failure:" body)
+                        (log/info "Responding with map body: " body)
                         (let [accepts (get-in req [:headers "accept"] "application/edn")
-                              selected-format (select-content-type accepts)]
+                              selected-format (select-content-type accepts)
+                              printed-edn (java.io.StringWriter.)]
 
+                          ;; Watch out coz this baby is mutable...
+                          (pprint body printed-edn)
                           (-> response
-                              (assoc :body (pr-str body))
+                              (assoc :body (str printed-edn))
                               (assoc-in [:headers "Content-Type"] "application/edn"))))
 
           ;; If we're sequential assume we're streaming RDF
