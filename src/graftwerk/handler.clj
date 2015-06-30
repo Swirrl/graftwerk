@@ -24,7 +24,7 @@
   []
 
   (timbre/merge-config!
-   {:appenders {:spit (appenders/spit-appender {:path "graftwerk.log"})}})
+   {:appenders {:spit (appenders/spit-appender {:fname "graftwerk.log"})}})
 
   (timbre/info "\n-=[ graftwerk started successfully"
                (when (env :dev) "using the development profile") "]=-"))

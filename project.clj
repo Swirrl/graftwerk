@@ -1,4 +1,4 @@
-(defproject graftwerk "0.1.0-SNAPSHOT"
+(defproject graftwerk "0.2.1-SNAPSHOT"
 
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
@@ -9,7 +9,7 @@
                  [com.taoensso/tower "3.0.2"]
                  [selmer "0.8.0"]
                  [enlive "1.1.5"]
-                 [grafter "0.5.0-SNAPSHOT"]
+                 [grafter "0.5.0"]
                  [clojail "1.0.6"]
                  [environ "1.0.0"]
                  [compojure "1.3.2"]
@@ -19,6 +19,7 @@
                  [ring-middleware-format "0.4.0"]
                  [noir-exception "0.2.3"]
                  [bouncer "0.3.2"]
+                 [org.slf4j/slf4j-simple "1.6.1"]
                  [prone "0.8.0"]]
 
   :min-lein-version "2.5.0"
