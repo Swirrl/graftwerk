@@ -79,7 +79,7 @@
                     :namespace (namespace-symbol namespace-form)
                     :context context
                     :transform eagerly-consume
-                    :timeout 20000
+                    :timeout (* 5 60 1000) ;; 5 minute timeout
                     :max-defs 500)]
     (log/log-env :info "build-sandbox")
     (sb pipeline-sexp)
