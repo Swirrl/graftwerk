@@ -16,7 +16,9 @@
 (defn log-request [handler]
   (fn [req]
     (timbre/debug req)
-    (handler req)))
+    (let [{:keys [status headers] :as response} (handler req)]
+      (timbre/info status " " (:request-method req) " " (:uri req) " " headers)
+      response)))
 
 (defn common-api-middleware [handler]
   (-> handler
@@ -26,7 +28,8 @@
   (if (env :dev)
     (-> handler
         wrap-error-page
-        wrap-exceptions)
+        wrap-exceptions
+        log-request)
     handler))
 
 (defn production-middleware [handler]
@@ -35,4 +38,5 @@
       (wrap-idle-session-timeout
         {:timeout (* 60 30)
          :timeout-response (redirect "/")})
-      (wrap-internal-error :log #(timbre/error %))))
+      (wrap-internal-error :log #(timbre/error %))
+      log-request))
