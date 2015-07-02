@@ -1,4 +1,4 @@
-(defproject graftwerk "0.2.1-SNAPSHOT"
+(defproject graftwerk "0.2.1"
 
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
