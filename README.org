@@ -1,5 +1,22 @@
 #+TITLE: Graftwerk :: Pipeline Runner API Docs
 
+* About Graftwerk
+
+Graftwerk is a RESTful execution service for running [[http://grafter.org/][Grafter
+Pipelines]].  It was designed and developed as a backend to support user
+interfaces for building and debugging grafter Linked Data ETL
+pipelines.
+
+It was built as part of the FP7 [[http://project.dapaas.eu/][DaPaaS project]] and functions as part
+of the [[http://datagraft.net/][Datagraft]] service, where it powers the [[https://www.youtube.com/watch?v=zAruS4cEmvk][transformation builder]]
+interface.
+
+Graftwerk can be used both to execute Grafter pipelines and provide
+previews of their outputs.
+
+Graftwerk is currently in maintainance mode, but its features are
+planned to be integrated into a new service for Grafter.
+
 * Getting Started
 ** Running the Graftwerk Server
 
@@ -19,7 +36,7 @@ Alternatively this can be set by setting the system property
 =java.security.policy= at jvm startup e.g.
 
 #+BEGIN_SRC text
-java -jar graftwerk.jar -Djava.security.policy==~/.java.policy
+java -jar graftwerk.jar -Djava.security.policy=~/.java.policy
 #+END_SRC
 
 You can build a release for Dapaas with: =lein uberjar=
@@ -32,14 +49,8 @@ Or run in development with:
 
 =lein repl=
 
-The server will start on port 3000 visiting the following URL will
-send you to a test page where you can test the app and inspect some of
-the requests from your web browsers dev tools:
-
-[[http://localhost:3000/][http://localhost:3000/]]
-
-NOTE: that testing in a browser may be misleading because the browser
-sets different accept headers.
+The server will start on port 3000, and the root URL will redirect to
+the API documentation on github.  No user interface is provided.
 
 * Running Pipelines
 

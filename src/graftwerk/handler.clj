@@ -1,7 +1,6 @@
 (ns graftwerk.handler
   (:require [compojure.core :refer [defroutes routes GET]]
             [graftwerk.routes.evaluate :refer [pipe-route graft-route]]
-            [graftwerk.routes.pages :refer [page-routes]]
             [graftwerk.middleware :refer [common-api-middleware
                                           development-middleware
                                           production-middleware]]
@@ -13,8 +12,8 @@
 
 (defroutes base-routes
   (GET "/" []
-       (redirect "/pipe"))
-  (route/resources "/images" {:root "src/test-support/images"})
+       ;; Redirect to docs on github
+       (redirect "https://github.com/Swirrl/graftwerk#running-pipes-and-grafts-on-the-whole-dataset"))
   (route/resources "/" {:root "build"})
   (route/not-found "Not Found"))
 
@@ -40,7 +39,6 @@
   (-> (routes
        #'pipe-route
        #'graft-route
-       #'page-routes
        #'base-routes)
       common-api-middleware
       development-middleware

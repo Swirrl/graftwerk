@@ -29,11 +29,9 @@
                  :init (-main)
                  :timeout 60000}
 
-  :jvm-opts ["-server" "-Djava.security.manager" "-Djava.security.policy=/Users/rick/.java.policy"]
+  :jvm-opts ["-server" "-Djava.security.manager" "-Djava.security.policy=.java.policy"]
 
   :main graftwerk.core
-
-  :resource-paths ["girder"]
 
   :plugins [[lein-ring "0.9.1"]
             [lein-environ "1.0.0"]
