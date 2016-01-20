@@ -298,20 +298,11 @@ Then a request to the =graft= route for =row= =1= with an =Accept= header of
 #+BEGIN_SRC clojure
 {:bindings
  {:strs
-  [persons-graph-uri
-   person-uri
-   person-name
-   person-age
-   friend-uri
-   friend-name
-   friend-age]},
+  [persons-graph-uri person-uri person-name
+   person-age friend-uri friend-name friend-age]},
  :row
- {"friend-age" 30,
-  "friend-name" "Alice",
-  "friend-uri" "http://alice/",
-  "person-age" 35,
-  "person-name" "Bob",
-  "person-uri" "http://bob/",
+ {"friend-age" 30, "friend-name" "Alice", "friend-uri" "http://alice/",
+  "person-age" 35, "person-name" "Bob",  "person-uri" "http://bob/",
   "persons-graph-uri" "http://graph/"},
  :template
  ((graph
