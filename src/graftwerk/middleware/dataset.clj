@@ -59,7 +59,8 @@
     (log/info "Selected format: " chosen)
     chosen))
 
-(def ^:private mime-type->streamer {"application/csv" stream-csv
+(def ^:private mime-type->streamer {"text/csv" stream-csv
+                                    "application/csv" stream-csv
                                     "application/edn" stream-edn})
 
 (defn map-values [f m]

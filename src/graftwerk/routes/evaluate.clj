@@ -14,6 +14,7 @@
             [grafter.pipeline :as pl]
             [taoensso.timbre :as log])
   (:import [java.io FilePermission]
+           [java.util PropertyPermission]
            (clojure.lang LispReader$ReaderException)))
 
 (def default-namespace-declaration
@@ -24,6 +25,7 @@
                [grafter.rdf.templater :refer [graph]]
                [grafter.vocabularies.rdf :refer :all]
                [grafter.vocabularies.qb :refer :all]
+               [graftwerk.js :refer [js-fn-timeout]]
                [grafter.vocabularies.sdmx-measure :refer :all]
                [grafter.vocabularies.sdmx-attribute :refer :all]
                [grafter.vocabularies.skos :refer :all]
@@ -69,8 +71,8 @@
   "Build a clojailed sandbox configured for Grafter pipelines.  Takes
   a parsed sexp containing the grafter pipeline file."
   [pipeline-sexp file-path]
-  (let [context (-> (FilePermission. file-path "read")
-                    permissions
+  (let [context (-> (permissions (FilePermission. file-path "read")
+                                 (PropertyPermission. "java.vm.name" "read"))
                     domain
                     context)
         namespace-form (namespace-declaration)

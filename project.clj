@@ -1,4 +1,4 @@
-(defproject graftwerk "0.2.1"
+(defproject graftwerk "0.2.2-SNAPSHOT"
 
   :description "Service for executing grafter transformations, and generating
   their previews.  (c) 2016 Swirrl IT Ltd"
@@ -10,6 +10,7 @@
                  [com.taoensso/timbre "4.0.1"]
                  [com.taoensso/tower "3.0.2"]
                  [selmer "0.8.0"]
+                 [org.marianoguerra/clj-rhino "0.2.2"]
                  [enlive "1.1.5"]
                  [grafter "0.5.0"]
                  [clojail "1.0.6"]
