@@ -121,3 +121,7 @@ either the row level, or cell level.
                        :rows [{"one" 1 :two 2 "three" 3}
                               {"one" 2 :two 4 "three" 6}] }
 #+END_SRC
+
+* License
+
+Licensed under the Eclipse Public License.  (c) 2015 Swirrl IT Ltd.
