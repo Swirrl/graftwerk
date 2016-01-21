@@ -12,10 +12,13 @@ interface.
 Graftwerk can be used both to execute Grafter pipelines and provide
 previews of their outputs.
 
-Graftwerk is currently in maintainance mode, but its features are
-planned to be integrated into a new service for Grafter.
+*NOTE: Apart from occaisional patches to support legacy projects this
+project is no longer actively maintained.*
 
-It currently depends on Grafter 0.5.0.
+A new grafter service superceding this release is planned in the
+future.
+
+Graftwerk currently depends on Grafter 0.5.0.
 
 * Getting Started
 ** Running the Graftwerk Server
