@@ -1,5 +1,3 @@
-#+TITLE: Graftwerk :: Pipeline Runner API Docs
-
 * About Graftwerk
 
 Graftwerk is a RESTful execution service for running [[http://grafter.org/][Grafter
@@ -16,6 +14,8 @@ previews of their outputs.
 
 Graftwerk is currently in maintainance mode, but its features are
 planned to be integrated into a new service for Grafter.
+
+It currently depends on Grafter 0.5.0.
 
 * Getting Started
 ** Running the Graftwerk Server
@@ -389,16 +389,8 @@ more details on the error may be contained in an EDN Error object.
 Error objects may in the future also be returned inside Datasets at
 either the row level, or cell level.
 
-* Notes
-
-#+BEGIN_SRC clojure
-#grafter.edn/Dataset { :column-names ["one" :two "three"]
-                       :rows [{"one" 1 :two 2 "three" 3}
-                              {"one" 2 :two 4 "three" 6}] }
-#+END_SRC
-
 * License
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
-(c) 2015 Swirrl IT Ltd.
+(c) Swirrl IT Ltd 2016
