@@ -12,10 +12,10 @@ interface.
 Graftwerk can be used both to execute Grafter pipelines and provide
 previews of their outputs.
 
-*NOTE: Apart from occaisional patches to support legacy projects this
+*NOTE: Apart from occasional patches to support legacy projects this
 project is no longer actively maintained.*
 
-A new grafter service superceding this release is planned in the
+A new grafter service superseding this release is planned in the
 future.
 
 Graftwerk currently depends on Grafter 0.5.0.
@@ -36,7 +36,7 @@ grant {
 #+END_SRC
 
 Alternatively this can be set by setting the system property
-=java.security.policy= at jvm startup e.g.
+=java.security.policy= at JVM startup e.g.
 
 #+BEGIN_SRC text
 java -jar graftwerk.jar -Djava.security.policy=~/.java.policy
@@ -58,7 +58,7 @@ the API documentation on github.  No user interface is provided.
 * Running Pipelines
 
 The server provides two routes for running both pipes and grafts,
-there are also two test forms which can be used to fasion well formed
+there are also two test forms which can be used to fashion well formed
 requests via the web browser.
 
 It is recommended that you test both of these routes first to
@@ -119,7 +119,7 @@ Lets look at the pipeline code:
 #+END_SRC
 
 The important thing to notice is that for security reasons it doesn't include a
-namespace defintion.  Thats because this is set by the server.  The namespace
+namespace definition.  Thats because this is set by the server.  The namespace
 requires you wish to use can be configured by specifying them in the
 =namespace.edn= file.
 
@@ -142,7 +142,7 @@ requires you wish to use can be configured by specifying them in the
 
 - Visit [[http://localhost:3000/pipe][/pipe]] in your browser to access the test form for pipes.
 
-** Runnings Grafts
+** Running Grafts
 
 - Visit [[http://localhost:3000/graft][/graft]] in your browser to access the test form for grafts.
 
@@ -162,7 +162,7 @@ The following response codes may be returned on requests:
 |         404 | Not Found              | Invalid service route                                                                                      |
 |         415 | Unsupported Media Type | The server did not understand the supplied data, e.g. a file format that we don't understand was supplied. |
 |         422 | Unprocessable Entity   | The data is understood, but still invalid.  The response object may contain more information.              |
-|         500 | Server Error           | An error occured.  An error object may be returned in the response.                                        |
+|         500 | Server Error           | An error occurred.  An error object may be returned in the response.                                        |
 
 ** Running pipes and grafts on the whole dataset
 
@@ -276,9 +276,9 @@ setting the =Accept= header.
 Graft previews inspect the =command= parameter and find the specified graft
 commands =graph-fn= template.  The specified =row= is then transformed via the
 grafts pipe and the data injected into the =graph-fn= template.  Graftwerk
-finally returns a datastructure containing the body of the graph-fn template
+finally returns a data-structure containing the body of the graph-fn template
 with the column variables substituted for the pipe transformed data.  The
-returned datastructure also contains additional data which may be useful for
+returned data-structure also contains additional data which may be useful for
 debugging.  This includes the transformed row, and bindings specified in the
 =graph-fn='s arguments list.
 
