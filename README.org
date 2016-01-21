@@ -1,6 +1,8 @@
 #+TITLE: Graftwerk :: Pipeline Runner API Docs
 
-* Building
+* Getting Started
+
+** Running the Graftwerk Server
 
 Graftwerk uses clojail and Java SecurityManagers to sandbox the
 execution of certain code.  For development it is recommended that you
@@ -40,6 +42,98 @@ the requests from your web browsers dev tools:
 NOTE: that testing in a browser may be misleading because the browser
 sets different accept headers.
 
+* Running Pipelines
+
+The server provides two routes for running both pipes and grafts,
+there are also two test forms which can be used to fasion well formed
+requests via the web browser.
+
+It is recommended that you test both of these routes first to
+understand how the system works.  You can preview these network
+requests from your browser in the Firefox or Chrome dev tools.  This
+will give you an idea about how to recreate them programmatically;
+though beware that the accept headers the browser sends will be
+different; and force graftwerk to return a default encoding.
+
+** Test Data
+
+We provide two files of test data =example_pipeline.clj= and
+=example-data.csv=.  The server currently only works with CSV files as
+input, Excel file support will be added in the future.
+
+Lets look at the pipeline code:
+
+#+BEGIN_SRC clojure
+(defn ->integer
+  "An example transformation function that converts a string to an integer"
+  [s]
+  (Integer/parseInt s))
+
+(def base-domain (prefixer "http://my-domain.com"))
+
+(def base-graph (prefixer (base-domain "/graph/")))
+
+(def base-id (prefixer (base-domain "/id/")))
+
+(def base-vocab (prefixer (base-domain "/def/")))
+
+(def base-data (prefixer (base-domain "/data/")))
+
+(def make-graph
+  (graph-fn [{:keys [name sex age person-uri gender]}]
+            (graph (base-graph "example")
+                   [person-uri
+                    [rdf:a foaf:Person]
+                    [foaf:gender sex]
+                    [foaf:age age]
+                    [foaf:name (s name)]])))
+
+(defpipe my-pipe
+  "Pipeline to convert tabular persons data into a different tabular format."
+  [data-file]
+  (-> (read-dataset data-file :format :csv)
+      (drop-rows 1)
+      (make-dataset [:name :sex :age])
+      (derive-column :person-uri [:name] base-id)
+      (mapc {:age ->integer
+             :sex {"f" (s "female")
+                   "m" (s "male")}})))
+
+
+(defgraft my-graft
+  "Pipeline to convert the tabular persons data sheet into graph data."
+  my-pipe make-graph)
+#+END_SRC
+
+The important thing to notice is that for security reasons it doesn't
+include a namespace defintion.  Thats because this is set by the
+server.  Currently this is hardcoded in the server, but will be
+configurable (server side) in the future.  This is the default context
+that pipelines execute in:
+
+#+BEGIN_SRC clojure
+  (ns graftwerk.pipele
+    (:require
+     [grafter.tabular :refer [defpipe defgraft column-names columns rows
+                              all-columns derive-column mapc swap drop-rows
+                              read-dataset read-datasets make-dataset
+                              move-first-row-to-header _ graph-fn
+                              test-dataset]]
+     [grafter.rdf :refer [s prefixer]]
+     [grafter.rdf.protocols :refer [->Quad]]
+     [grafter.rdf.templater :refer [graph]]
+     [grafter.vocabularies.rdf :refer :all]
+     [grafter.vocabularies.foaf :refer :all]))
+#+END_SRC
+
+** Running Pipes
+
+- Visit [[http://localhost:3000/pipe][/pipe]] in your browser to access the test form for pipes.
+
+** Runnings Grafts
+
+- Visit [[http://localhost:3000/graft][/graft]] in your browser to access the test form for grafts.
+
 * API
 
 *NOTE:* The Graftwerk pipeline runner is a stateless service.  You
@@ -75,14 +169,16 @@ For more details see the [[http://www.w3.org/TR/html401/interact/forms.html#h-17
 
 The form data =MUST= consist of the following parts:
 
-| Name (form key) | Description                      | Content-Disposition | Content Type    |
-|-----------------+----------------------------------+---------------------+-----------------|
-| pipeline        | The Grafter Pipeline Code        | file                | application/edn |
-| data            | The input file to be transformed | file                | text/csv        |
+| Name (form key) | Description                                 | Content-Disposition |
+|-----------------+---------------------------------------------+---------------------|
+| pipeline        | The Grafter Pipeline Code                   | file                |
+| data            | The input file to be transformed            | file                |
+| command         | The name of the pipe/graft function to call | form-data           |
 
-The =pipeline= MUST contain one and only one defpipe definition
-The =defpipe= MUST contain a single =->= form with any number of
-operation forms inside.
+If your pipeline code contains a pipe you want to execute, you must
+set the command to be the unqualified name of the function.  e.g. to
+run the pipe below you would set command to =my-pipeline=.  This works
+the same for grafts.
 
 #+BEGIN_SRC clojure
 (defpipe my-pipeline [dataset]
@@ -103,16 +199,22 @@ it should not be used to execute grafts.
 
 Clients =SHOULD= specify the format they want by setting the accept
 header of the request, or by supplying a format parameter on the URL.
-If no valid format is specified EDN will be returned.
+If no valid format is specified EDN will be returned for pipe routes
+and n-triples for grafts.
 
 It =SHALL= support the following response formats:
 
-| Format Extension | Accept Header   |
-|------------------+-----------------|
-| .edn             | application/edn |
-| .csv             | text/csv        |
+| Route Type | Accept Header         |
+|------------+-----------------------|
+| pipe       | application/edn       |
+| pipe       | text/csv              |
+| graft      | application/n-triples |
 
 ** Pagination Parameters
+
+/NOTE:/ Pagination is not supported yet on the graft route, currently
+graft runs return only all of the results as n-triples.  We will add
+support for specifying a portion of this output for previews.
 
 If no page number is supplied then the pipeline will return the
 results of the whole pipeline execution in the specified format.
@@ -135,9 +237,22 @@ results.
 Responses are in EDN as the format can correctly convey type
 information which would need additional work to represent in JSON.
 
-*** Error Objects
+*** Tabular Data
 
-Error objects are defined as EDN tagged literals and have the
+Pipes support EDN and CSV formats depending on the accept header.  The
+EDN representation of a tabular dataset will follow this structure:
+
+#+BEGIN_SRC clojure
+ { :column-names ["one" :two "three"]
+   :rows [{"one" 1 :two 2 "three" 3}
+          {"one" 2 :two 4 "three" 6}] }
+#+END_SRC
+
+*** TODO Error Objects
+
+/NOTE this is not yet supported/
+
+Error objects will be defined as EDN tagged literals and have the
 following properties:
 
 #+BEGIN_SRC clojure
@@ -154,8 +269,9 @@ more details on the error may be contained in an EDN Error object.
 Error objects may in the future also be returned inside Datasets at
 either the row level, or cell level.
 
-*** Tabular Data
+* Notes
 
+<<<<<<< HEAD
 #+BEGIN_SRC clojure
 #grafter.edn/Dataset { :column-names ["one" :two "three"]
                        :rows [{"one" 1 :two 2 "three" 3}
