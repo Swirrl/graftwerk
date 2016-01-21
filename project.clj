@@ -1,9 +1,11 @@
 (defproject graftwerk "0.2.1"
 
+  :url "http://grafter.org/"
   :description "Service for executing grafter transformations, and generating
-  their previews.  (c) 2016 Swirrl IT Ltd"
+  their previews."
 
-  :url "https://www.eclipse.org/legal/epl-v10.html"
+  :license {:name "Eclipse Public License - v1.0 (c) 2016 Swirrl IT Ltd"
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [ring-server "0.3.1"]
